@@ -10,6 +10,7 @@ import HourglassTopRoundedIcon from "@mui/icons-material/HourglassTopRounded";
 import LaunchRoundedIcon from "@mui/icons-material/LaunchRounded";
 import PolicyRoundedIcon from "@mui/icons-material/PolicyRounded";
 import PaidRoundedIcon from "@mui/icons-material/PaidRounded";
+import PercentRoundedIcon from "@mui/icons-material/PercentRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
@@ -33,6 +34,7 @@ import type {
     ContributionEventSummary,
     ContributionLedgerRow,
     DashboardSummary,
+    PlatformFeeSettings,
     StaffSummary
 } from "../types/api";
 import { formatCurrency, formatDate } from "./page-format";
@@ -143,6 +145,7 @@ function AdminDashboardView() {
 function FundManagerDashboardView() {
     const theme = useTheme();
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
+    const [platformFeeSettings, setPlatformFeeSettings] = useState<PlatformFeeSettings | null>(null);
     const [events, setEvents] = useState<ContributionEventSummary[]>([]);
     const [recentLedgerRows, setRecentLedgerRows] = useState<ContributionLedgerRow[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
@@ -153,12 +156,14 @@ function FundManagerDashboardView() {
         Promise.all([
             api.get(endpoints.dashboard),
             api.get(endpoints.events, { params: { page_size: 100 } }),
-            api.get(endpoints.contributions, { params: { page_size: 12 } })
+            api.get(endpoints.contributions, { params: { page_size: 12 } }),
+            api.get(endpoints.adminPlatformFee)
         ])
-            .then(([summaryResponse, eventsResponse, contributionsResponse]) => {
+            .then(([summaryResponse, eventsResponse, contributionsResponse, platformFeeResponse]) => {
                 setSummary(summaryResponse.data.data);
                 setEvents(eventsResponse.data.data.items || []);
                 setRecentLedgerRows(contributionsResponse.data.data.items || []);
+                setPlatformFeeSettings(platformFeeResponse.data.data || null);
             })
             .catch((error) => setErrorMessage(getApiErrorMessage(error, "Unable to load dashboard summary.")))
             .finally(() => setLoading(false));
@@ -613,6 +618,55 @@ function FundManagerDashboardView() {
                                 }}
                             >
                                 <Stack spacing={1.1}>
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            p: 1.4,
+                                            borderRadius: 2.25,
+                                            bgcolor: alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.08 : 0.36),
+                                            borderColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.24 : 0.16)
+                                        }}
+                                    >
+                                        <Stack spacing={0.9}>
+                                            <Stack direction="row" spacing={1} alignItems="center">
+                                                <PercentRoundedIcon color="primary" fontSize="small" />
+                                                <Typography variant="body1" sx={{ fontWeight: 800 }}>
+                                                    Live payment fee policy
+                                                </Typography>
+                                            </Stack>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Member mobile money payments currently use the active platform and Snippe cost model set by Admin.
+                                            </Typography>
+                                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} flexWrap="wrap">
+                                                <Stack spacing={0.25}>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Platform fee
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                                        {platformFeeSettings ? `${platformFeeSettings.platform_fee_percentage}%` : "Not configured"}
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack spacing={0.25}>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Gateway fee
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                                        {platformFeeSettings
+                                                            ? `${platformFeeSettings.gateway_fee_percentage}% + ${formatCurrency(platformFeeSettings.gateway_flat_fee)}`
+                                                            : "—"}
+                                                    </Typography>
+                                                </Stack>
+                                                <Stack spacing={0.25}>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Minimum contribution
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                                        {platformFeeSettings ? formatCurrency(platformFeeSettings.minimum_contribution_amount) : "—"}
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
+                                        </Stack>
+                                    </Paper>
                                     <Button component={RouterLink} to="/members" variant="outlined" startIcon={<GroupRoundedIcon />} fullWidth>
                                         Manage Members
                                     </Button>

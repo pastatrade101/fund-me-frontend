@@ -18,7 +18,8 @@ import { ContributionPaymentStartDialog } from "../components/common/Contributio
 import { PageHero } from "../components/common/PageHero";
 import { api, getApiErrorMessage } from "../lib/api";
 import { endpoints } from "../lib/endpoints";
-import type { ContributionEventSummary, ContributionLedgerRow, ContributionPaymentOrderStatus } from "../types/api";
+import { calculateContributionPaymentPreview } from "../lib/platformFee";
+import type { ContributionEventSummary, ContributionLedgerRow, ContributionPaymentOrderStatus, PlatformFeeSettings } from "../types/api";
 import { getEventTypeLabel } from "../utils/policy-config";
 import { formatCurrency, formatDate } from "./page-format";
 
@@ -40,6 +41,7 @@ export function EventsPage() {
     const [successMessage, setSuccessMessage] = useState("");
     const [selectedContribution, setSelectedContribution] = useState<SelectedContributionContext | null>(null);
     const [activeOrder, setActiveOrder] = useState<ContributionPaymentOrderStatus | null>(null);
+    const [platformFeeSettings, setPlatformFeeSettings] = useState<PlatformFeeSettings | null>(null);
     const [paymentPhone, setPaymentPhone] = useState(user?.member?.phone || "");
     const [payDialogOpen, setPayDialogOpen] = useState(false);
     const [preparingPayment, setPreparingPayment] = useState(false);
@@ -66,13 +68,15 @@ export function EventsPage() {
         }
 
         try {
-            const [eventsResponse, contributionsResponse] = await Promise.all([
+            const [eventsResponse, contributionsResponse, platformFeeResponse] = await Promise.all([
                 api.get(endpoints.events),
-                api.get(endpoints.contributions, { params: { page_size: 100 } })
+                api.get(endpoints.contributions, { params: { page_size: 100 } }),
+                api.get(endpoints.adminPlatformFee)
             ]);
 
             setEvents(eventsResponse.data.data.items || []);
             setMemberRows(contributionsResponse.data.data.items || []);
+            setPlatformFeeSettings(platformFeeResponse.data.data || null);
         } finally {
             if (showLoader) {
                 setLoading(false);
@@ -128,6 +132,7 @@ export function EventsPage() {
     const selectedOutstandingAmount = selectedContribution
         ? Math.max(Number(selectedContribution.row.expected_amount || 0) - Number(selectedContribution.row.amount_paid || 0), 0)
         : 0;
+    const paymentPreview = calculateContributionPaymentPreview(selectedOutstandingAmount, platformFeeSettings);
 
     const handleOpenContribution = async (event: ContributionEventSummary, row: ContributionLedgerRow) => {
         setSelectedContribution({ event, row });
@@ -240,6 +245,11 @@ export function EventsPage() {
 
     const handleSubmitPayment = async () => {
         if (!selectedContribution) {
+            return;
+        }
+
+        if (!paymentPreview.minimum_amount_met) {
+            setErrorMessage(paymentPreview.minimum_amount_message || "This contribution is below the minimum amount allowed for mobile money processing.");
             return;
         }
 
@@ -497,7 +507,15 @@ export function EventsPage() {
 
                     <ContributionPaymentStartDialog
                         open={payDialogOpen}
-                        amount={selectedOutstandingAmount}
+                        contributionAmount={paymentPreview.contribution_amount}
+                        platformFee={paymentPreview.platform_fee}
+                        gatewayFee={paymentPreview.gateway_fee}
+                        totalToPay={paymentPreview.total_to_pay}
+                        platformFeeRate={platformFeeSettings?.platform_fee_percentage ?? null}
+                        gatewayFeeRate={platformFeeSettings?.gateway_fee_percentage ?? null}
+                        gatewayFlatFee={platformFeeSettings?.gateway_flat_fee ?? null}
+                        minimumAmountMet={paymentPreview.minimum_amount_met}
+                        minimumAmountMessage={paymentPreview.minimum_amount_message}
                         phone={paymentPhone}
                         onPhoneChange={setPaymentPhone}
                         onClose={() => setPayDialogOpen(false)}

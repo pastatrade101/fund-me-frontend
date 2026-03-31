@@ -68,6 +68,11 @@ export function ContributionReceiptDialog({
     const transactionReference = order?.gateway_reference || row.payment_reference || "System generated";
     const internalReference = order?.external_id || row.id;
     const outstanding = Math.max(Number(row.expected_amount || 0) - Number(row.amount_paid || 0), 0);
+    const contributionAmount = Number(order?.contribution_amount ?? row.expected_amount ?? 0);
+    const platformFee = Number(order?.platform_fee ?? 0);
+    const gatewayFee = Number(order?.gateway_fee ?? 0);
+    const totalCharged = Number(order?.total_to_pay ?? contributionAmount + platformFee + gatewayFee);
+    const netFundAmount = Number(order?.net_amount ?? row.amount_paid ?? 0);
     const isPaid = row.status === "paid";
     const isPartial = row.status === "partial";
     const isWaived = row.status === "waived";
@@ -159,7 +164,19 @@ export function ContributionReceiptDialog({
                             ) : (
                                 <Grid container spacing={1.5}>
                                     <Grid size={{ xs: 12, md: 6 }}>
-                                        <ReceiptLine label="Contribution amount" value={formatCurrency(row.expected_amount)} />
+                                        <ReceiptLine label="Contribution amount" value={formatCurrency(contributionAmount)} />
+                                    </Grid>
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <ReceiptLine label="Platform fee" value={formatCurrency(platformFee)} />
+                                    </Grid>
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <ReceiptLine label="Mobile money fee" value={formatCurrency(gatewayFee)} />
+                                    </Grid>
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <ReceiptLine label="Total charged" value={formatCurrency(totalCharged)} />
+                                    </Grid>
+                                    <Grid size={{ xs: 12, md: 6 }}>
+                                        <ReceiptLine label="Event receives" value={formatCurrency(netFundAmount)} />
                                     </Grid>
                                     <Grid size={{ xs: 12, md: 6 }}>
                                         <ReceiptLine label="Outstanding balance" value={formatCurrency(outstanding)} />

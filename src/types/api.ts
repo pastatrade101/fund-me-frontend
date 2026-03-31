@@ -42,6 +42,17 @@ export interface Department {
     updated_at?: string;
 }
 
+export interface PlatformFeeSettings {
+    id: string;
+    platform_fee_percentage: number;
+    gateway_fee_percentage: number;
+    gateway_flat_fee: number;
+    minimum_contribution_amount: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface ContributionPolicy {
     id: string;
     name: string;
@@ -113,6 +124,12 @@ export interface ContributionPaymentOrderStatus {
     member_id: string;
     status: "pending" | "paid" | "posted" | "failed" | "expired";
     amount: number;
+    contribution_amount: number;
+    platform_fee: number;
+    gateway_fee: number;
+    gross_amount: number;
+    net_amount: number;
+    total_to_pay: number;
     posted_amount: number;
     currency: string;
     payment_method: "mobile_money";
@@ -215,6 +232,15 @@ export interface ContributionEventDetail {
         contribution_policies: ContributionPolicy;
     };
     summary: ContributionEventSummary;
+}
+
+export interface EventFinancialSummary {
+    event_id: string;
+    total_contributions: number;
+    platform_fees: number;
+    gateway_fees: number;
+    net_event_balance: number;
+    contributors_count: number;
 }
 
 export interface DepartmentParticipationRow {

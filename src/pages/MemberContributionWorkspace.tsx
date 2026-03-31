@@ -26,7 +26,8 @@ import { PageHero } from "../components/common/PageHero";
 import { StatCard } from "../components/common/StatCard";
 import { api, getApiErrorMessage } from "../lib/api";
 import { endpoints } from "../lib/endpoints";
-import type { ContributionEventDetail, ContributionLedgerRow, ContributionPaymentOrderStatus } from "../types/api";
+import { calculateContributionPaymentPreview } from "../lib/platformFee";
+import type { ContributionEventDetail, ContributionLedgerRow, ContributionPaymentOrderStatus, PlatformFeeSettings } from "../types/api";
 import { getEventTypeLabel } from "../utils/policy-config";
 import { formatCurrency, formatDate } from "./page-format";
 function getOrderStateTone(order: ContributionPaymentOrderStatus | null) {
@@ -47,6 +48,7 @@ export function MemberContributionWorkspacePage() {
     const [detail, setDetail] = useState<ContributionEventDetail | null>(null);
     const [row, setRow] = useState<ContributionLedgerRow | null>(null);
     const [activeOrder, setActiveOrder] = useState<ContributionPaymentOrderStatus | null>(null);
+    const [platformFeeSettings, setPlatformFeeSettings] = useState<PlatformFeeSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
@@ -62,15 +64,17 @@ export function MemberContributionWorkspacePage() {
             setLoading(true);
         }
         try {
-            const [detailResponse, contributionResponse, latestOrderResponse] = await Promise.all([
+            const [detailResponse, contributionResponse, latestOrderResponse, platformFeeResponse] = await Promise.all([
                 api.get(endpoints.eventDetail(eventId)),
                 api.get(endpoints.contributions, { params: { event_id: eventId, page_size: 20 } }),
-                api.get(endpoints.contributionPaymentLatest, { params: { event_id: eventId } })
+                api.get(endpoints.contributionPaymentLatest, { params: { event_id: eventId } }),
+                api.get(endpoints.adminPlatformFee)
             ]);
 
             setDetail(detailResponse.data.data || null);
             setRow((contributionResponse.data.data.items || [])[0] || null);
             setActiveOrder(latestOrderResponse.data.data || null);
+            setPlatformFeeSettings(platformFeeResponse.data.data || null);
         } finally {
             if (showLoader) {
                 setLoading(false);
@@ -146,16 +150,27 @@ export function MemberContributionWorkspacePage() {
         : 0;
 
     const hasPendingOrder = activeOrder?.status === "pending";
+    const paymentPreview = calculateContributionPaymentPreview(outstandingAmount, platformFeeSettings);
+    const activeOrderContributionAmount = Number(activeOrder?.contribution_amount || outstandingAmount);
+    const activeOrderPlatformFee = Number(activeOrder?.platform_fee || 0);
+    const activeOrderGatewayFee = Number(activeOrder?.gateway_fee || 0);
+    const activeOrderTotalToPay = Number(activeOrder?.total_to_pay || activeOrderContributionAmount + activeOrderPlatformFee + activeOrderGatewayFee);
     const canPay = Boolean(
         row &&
         detail &&
         ["pending", "partial"].includes(row.status) &&
         ["active", "collection"].includes(detail.event.status) &&
         outstandingAmount > 0 &&
+        paymentPreview.minimum_amount_met &&
         !hasPendingOrder
     );
 
     const handleSubmitPayment = async () => {
+        if (!paymentPreview.minimum_amount_met) {
+            setErrorMessage(paymentPreview.minimum_amount_message || "This contribution is below the minimum amount allowed for mobile money processing.");
+            return;
+        }
+
         try {
             setSubmitting(true);
             setErrorMessage("");
@@ -211,6 +226,8 @@ export function MemberContributionWorkspacePage() {
         ? "Contribution completed"
         : hasPendingOrder
             ? "Open payment progress"
+            : !paymentPreview.minimum_amount_met
+                ? "Below minimum contribution"
             : activeOrder?.status === "failed" || activeOrder?.status === "expired"
                 ? "Try again"
                 : "Pay contribution";
@@ -353,6 +370,18 @@ export function MemberContributionWorkspacePage() {
                                                 Mobile money order: {activeOrder.status}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
+                                                Contribution amount: {formatCurrency(activeOrderContributionAmount)}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Platform fee: {formatCurrency(activeOrderPlatformFee)}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Mobile money fee: {formatCurrency(activeOrderGatewayFee)}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Total charged: {formatCurrency(activeOrderTotalToPay)}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
                                                 Phone: {activeOrder.phone}
                                             </Typography>
                                         </>
@@ -361,7 +390,11 @@ export function MemberContributionWorkspacePage() {
                                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                                         <Button
                                             variant="contained"
-                                            disabled={row?.status === "paid" || row?.status === "waived"}
+                                            disabled={
+                                                row?.status === "paid"
+                                                || row?.status === "waived"
+                                                || (!hasPendingOrder && !canPay)
+                                            }
                                             onClick={() => {
                                                 if (hasPendingOrder) {
                                                     setProgressDialogOpen(true);
@@ -386,7 +419,9 @@ export function MemberContributionWorkspacePage() {
 
                                     {!canPay && !hasPendingOrder && row.status !== "paid" && row.status !== "waived" ? (
                                         <Typography variant="body2" color="text.secondary">
-                                            This contribution cannot be paid right now because the event is no longer collecting or there is no outstanding balance.
+                                            {paymentPreview.minimum_amount_met
+                                                ? "This contribution cannot be paid right now because the event is no longer collecting or there is no outstanding balance."
+                                                : paymentPreview.minimum_amount_message}
                                         </Typography>
                                     ) : null}
                                 </Stack>
@@ -402,7 +437,15 @@ export function MemberContributionWorkspacePage() {
 
             <ContributionPaymentStartDialog
                 open={payDialogOpen}
-                amount={outstandingAmount}
+                contributionAmount={paymentPreview.contribution_amount}
+                platformFee={paymentPreview.platform_fee}
+                gatewayFee={paymentPreview.gateway_fee}
+                totalToPay={paymentPreview.total_to_pay}
+                platformFeeRate={platformFeeSettings?.platform_fee_percentage ?? null}
+                gatewayFeeRate={platformFeeSettings?.gateway_fee_percentage ?? null}
+                gatewayFlatFee={platformFeeSettings?.gateway_flat_fee ?? null}
+                minimumAmountMet={paymentPreview.minimum_amount_met}
+                minimumAmountMessage={paymentPreview.minimum_amount_message}
                 phone={paymentPhone}
                 onPhoneChange={setPaymentPhone}
                 onClose={() => setPayDialogOpen(false)}

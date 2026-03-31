@@ -180,6 +180,10 @@ export function ContributionPaymentProgressDialog({
     const isPending = order.status === "pending";
     const isCompleted = order.status === "posted" || order.status === "paid";
     const isFailed = order.status === "failed" || order.status === "expired";
+    const displayedContributionAmount = Number(order.contribution_amount || contributionAmount || 0);
+    const displayedPlatformFee = Number(order.platform_fee || 0);
+    const displayedGatewayFee = Number(order.gateway_fee || 0);
+    const displayedTotalToPay = Number(order.total_to_pay || order.gross_amount || order.amount || displayedContributionAmount);
     const headline = isCompleted
         ? "Contribution completed"
         : isFailed
@@ -292,8 +296,24 @@ export function ContributionPaymentProgressDialog({
                                     <Typography sx={{ fontWeight: 700 }}>{eventTitle}</Typography>
                                 </Stack>
                                 <Stack spacing={0.35}>
-                                    <Typography variant="overline" color="text.secondary">Amount</Typography>
-                                    <Typography sx={{ fontWeight: 700 }}>{formatCurrency(contributionAmount)}</Typography>
+                                    <Typography variant="overline" color="text.secondary">Contribution amount</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatCurrency(displayedContributionAmount)}</Typography>
+                                </Stack>
+                                <Stack spacing={0.35}>
+                                    <Typography variant="overline" color="text.secondary">Platform fee</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatCurrency(displayedPlatformFee)}</Typography>
+                                </Stack>
+                                <Stack spacing={0.35}>
+                                    <Typography variant="overline" color="text.secondary">Mobile money fee</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatCurrency(displayedGatewayFee)}</Typography>
+                                </Stack>
+                                <Stack spacing={0.35}>
+                                    <Typography variant="overline" color="text.secondary">Total charged</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatCurrency(displayedTotalToPay)}</Typography>
+                                </Stack>
+                                <Stack spacing={0.35}>
+                                    <Typography variant="overline" color="text.secondary">Event receives</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatCurrency(displayedContributionAmount)}</Typography>
                                 </Stack>
                                 <Stack spacing={0.35}>
                                     <Typography variant="overline" color="text.secondary">Mobile number</Typography>

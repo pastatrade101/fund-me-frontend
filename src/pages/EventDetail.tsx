@@ -11,6 +11,7 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    Divider,
     Grid,
     Paper,
     Stack,
@@ -30,7 +31,7 @@ import { PageHero } from "../components/common/PageHero";
 import { StatCard } from "../components/common/StatCard";
 import { api, getApiErrorMessage } from "../lib/api";
 import { endpoints } from "../lib/endpoints";
-import type { ContributionEventDetail, ContributionLedgerRow } from "../types/api";
+import type { ContributionEventDetail, ContributionLedgerRow, EventFinancialSummary } from "../types/api";
 import { getContributorLabel, getEventTypeLabel, getFamilyLabel } from "../utils/policy-config";
 import { formatCurrency, formatDate, formatDateTime } from "./page-format";
 
@@ -38,6 +39,7 @@ export function EventDetailPage() {
     const navigate = useNavigate();
     const { id = "" } = useParams();
     const [detail, setDetail] = useState<ContributionEventDetail | null>(null);
+    const [financialSummary, setFinancialSummary] = useState<EventFinancialSummary | null>(null);
     const [rows, setRows] = useState<ContributionLedgerRow[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
     const [loading, setLoading] = useState(true);
@@ -48,13 +50,15 @@ export function EventDetailPage() {
     const [waiveReason, setWaiveReason] = useState("");
 
     const loadEvent = async () => {
-        const [detailResponse, contributionResponse] = await Promise.all([
+        const [detailResponse, contributionResponse, financialSummaryResponse] = await Promise.all([
             api.get(endpoints.eventDetail(id)),
-            api.get(endpoints.eventContributions(id))
+            api.get(endpoints.eventContributions(id)),
+            api.get(endpoints.eventFinancialSummary(id))
         ]);
 
         setDetail(detailResponse.data.data);
         setRows(contributionResponse.data.data || []);
+        setFinancialSummary(financialSummaryResponse.data.data || null);
     };
 
     useEffect(() => {
@@ -67,9 +71,10 @@ export function EventDetailPage() {
         return <DataPageSkeleton statCards={4} tableColumns={6} tableRows={6} detailPanels={2} />;
     }
 
-    const participationRate = detail.summary.paid_members + detail.summary.pending_members
-        ? Math.round((detail.summary.paid_members / (detail.summary.paid_members + detail.summary.pending_members)) * 100)
-        : 0;
+    const totalContributions = Number(financialSummary?.total_contributions ?? detail.summary.collected_total ?? 0);
+    const netEventBalance = Number(financialSummary?.net_event_balance ?? detail.summary.collected_total ?? 0);
+    const totalPlatformFees = Number(financialSummary?.platform_fees ?? 0);
+    const totalGatewayFees = Number(financialSummary?.gateway_fees ?? 0);
 
     const collectionOpen = detail.event.status === "active" || detail.event.status === "collection";
 
@@ -128,7 +133,13 @@ export function EventDetailPage() {
                     <StatCard icon={PaymentsRoundedIcon} label="Projected Total" value={formatCurrency(detail.summary.expected_total)} helper="Total contribution obligation generated from the eligible member ledger." />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                    <StatCard icon={PaymentsRoundedIcon} label="Collected Total" value={formatCurrency(detail.summary.collected_total)} helper="Amount already recorded into the contribution ledger." tone="success" />
+                    <StatCard icon={PaymentsRoundedIcon} label="Net Event Balance" value={formatCurrency(netEventBalance)} helper="Only the contribution amount credited into the event fund." tone="success" />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                    <StatCard icon={ReportProblemRoundedIcon} label="Platform Fees" value={formatCurrency(totalPlatformFees)} helper={`${financialSummary?.contributors_count ?? 0} contributors processed through the platform.`} tone="warning" />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                    <StatCard icon={ReportProblemRoundedIcon} label="Gateway Fees" value={formatCurrency(totalGatewayFees)} helper="Snippe mobile money costs added on top of member contributions." tone="warning" />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                     <StatCard icon={ReportProblemRoundedIcon} label="Pending Total" value={formatCurrency(detail.summary.pending_total)} helper={`${detail.summary.paid_members} of ${detail.summary.paid_members + detail.summary.pending_members} members have fully paid.`} tone="warning" />
@@ -137,20 +148,35 @@ export function EventDetailPage() {
 
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12, lg: 5 }}>
-                    <Paper sx={{ p: 2.25 }}>
-                        <Stack spacing={1.25}>
-                            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                                Event Summary
-                            </Typography>
-                            <PreviewLine label="Policy Used" value={detail.event.contribution_policies.name} />
-                            <PreviewLine label="Per-member contribution" value={formatCurrency(detail.event.contribution_policies.amount)} />
-                            <PreviewLine label="Support target" value={detail.event.target_amount ? formatCurrency(detail.event.target_amount) : "Not set"} />
-                            <PreviewLine label="Eligible Contributors" value={getContributorLabel(detail.event.contribution_policies)} />
-                            <PreviewLine label="Eligible Family" value={detail.event.contribution_policies.eligible_family.map((value) => getFamilyLabel(value)).join(", ")} />
-                            <PreviewLine label="Deadline" value={formatDateTime(detail.event.deadline)} />
-                            <PreviewLine label="Status" value={detail.event.status} />
-                        </Stack>
-                    </Paper>
+                    <Stack spacing={2}>
+                        <Paper sx={{ p: 2.25 }}>
+                            <Stack spacing={1.25}>
+                                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                    Event Summary
+                                </Typography>
+                                <PreviewLine label="Policy Used" value={detail.event.contribution_policies.name} />
+                                <PreviewLine label="Per-member contribution" value={formatCurrency(detail.event.contribution_policies.amount)} />
+                                <PreviewLine label="Support target" value={detail.event.target_amount ? formatCurrency(detail.event.target_amount) : "Not set"} />
+                                <PreviewLine label="Eligible Contributors" value={getContributorLabel(detail.event.contribution_policies)} />
+                                <PreviewLine label="Eligible Family" value={detail.event.contribution_policies.eligible_family.map((value) => getFamilyLabel(value)).join(", ")} />
+                                <PreviewLine label="Deadline" value={formatDateTime(detail.event.deadline)} />
+                                <PreviewLine label="Status" value={detail.event.status} />
+                            </Stack>
+                        </Paper>
+
+                        <Paper sx={{ p: 2.25 }}>
+                            <Stack spacing={1.5}>
+                                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                    Event Finance Summary
+                                </Typography>
+                                <FinanceLine label="Total Contributions" value={formatCurrency(totalContributions)} />
+                                <FinanceLine label="Platform Fees" value={formatCurrency(totalPlatformFees)} />
+                                <FinanceLine label="Gateway Fees (Snippe)" value={formatCurrency(totalGatewayFees)} />
+                                <Divider />
+                                <FinanceLine label="Net Event Balance" value={formatCurrency(netEventBalance)} emphasize />
+                            </Stack>
+                        </Paper>
+                    </Stack>
                 </Grid>
                 <Grid size={{ xs: 12, lg: 7 }}>
                     <Paper sx={{ overflow: "hidden" }}>
@@ -261,6 +287,34 @@ function PreviewLine({ label, value }: { label: string; value: string }) {
                 {label}
             </Typography>
             <Typography sx={{ fontWeight: 700 }}>{value}</Typography>
+        </Stack>
+    );
+}
+
+function FinanceLine({
+    label,
+    value,
+    emphasize = false
+}: {
+    label: string;
+    value: string;
+    emphasize?: boolean;
+}) {
+    return (
+        <Stack direction="row" justifyContent="space-between" spacing={2} alignItems="center">
+            <Typography
+                variant={emphasize ? "body1" : "body2"}
+                color={emphasize ? "text.primary" : "text.secondary"}
+                sx={{ fontWeight: emphasize ? 800 : 500 }}
+            >
+                {label}
+            </Typography>
+            <Typography
+                variant={emphasize ? "h6" : "body1"}
+                sx={{ fontWeight: emphasize ? 800 : 700, textAlign: "right" }}
+            >
+                {value}
+            </Typography>
         </Stack>
     );
 }
