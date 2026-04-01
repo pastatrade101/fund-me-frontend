@@ -725,7 +725,14 @@ export function LandingPage() {
                 background: pageBackground
             }}
         >
-            <Container maxWidth="lg" sx={{ pt: { xs: 2.5, md: 3 }, pb: { xs: 9, md: 12 } }}>
+            <Container
+                maxWidth={false}
+                sx={{
+                    pt: { xs: 2.5, md: 3 },
+                    pb: { xs: 9, md: 12 },
+                    px: { xs: 2, sm: 3, md: 4, lg: 5 }
+                }}
+            >
                 <Paper
                     variant="outlined"
                     sx={{
