@@ -23,6 +23,7 @@ import {
     TextField,
     Typography
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -37,59 +38,9 @@ const loginChipRadius = "6px";
 const loginFieldRadius = "8px";
 const loginButtonRadius = "8px";
 
-const fieldSx = {
-    "& .MuiOutlinedInput-root": {
-        minHeight: 56,
-        borderRadius: loginFieldRadius,
-        backgroundColor: alpha("#FFFFFF", 0.96),
-        transition: "border-color 160ms ease, box-shadow 160ms ease",
-        "& fieldset": {
-            borderColor: alpha(brandColors.primary[900], 0.12)
-        },
-        "&:hover fieldset": {
-            borderColor: alpha(brandColors.primary[500], 0.32)
-        },
-        "&.Mui-focused fieldset": {
-            borderColor: brandColors.primary[500]
-        },
-        "&.Mui-focused": {
-            boxShadow: `0 0 0 4px ${alpha(brandColors.accent[100], 0.72)}`
-        }
-    },
-    "& .MuiOutlinedInput-input": {
-        backgroundColor: "transparent"
-    },
-    "& .MuiOutlinedInput-input:-webkit-autofill": {
-        WebkitTextFillColor: brandColors.neutral.textPrimary,
-        WebkitBoxShadow: `0 0 0 100px ${alpha("#FFFFFF", 0.96)} inset`,
-        boxShadow: `0 0 0 100px ${alpha("#FFFFFF", 0.96)} inset`,
-        caretColor: brandColors.neutral.textPrimary,
-        borderRadius: "inherit",
-        transition: "background-color 9999s ease-out 0s"
-    },
-    "& .MuiOutlinedInput-input:-webkit-autofill:hover": {
-        WebkitTextFillColor: brandColors.neutral.textPrimary,
-        WebkitBoxShadow: `0 0 0 100px ${alpha("#FFFFFF", 0.96)} inset`,
-        boxShadow: `0 0 0 100px ${alpha("#FFFFFF", 0.96)} inset`
-    },
-    "& .MuiOutlinedInput-input:-webkit-autofill:focus": {
-        WebkitTextFillColor: brandColors.neutral.textPrimary,
-        WebkitBoxShadow: `0 0 0 100px ${alpha("#FFFFFF", 0.96)} inset`,
-        boxShadow: `0 0 0 100px ${alpha("#FFFFFF", 0.96)} inset`
-    },
-    "& .MuiInputAdornment-positionStart": {
-        color: alpha(brandColors.primary[900], 0.46),
-        marginRight: 1
-    },
-    "& .MuiInputAdornment-positionEnd": {
-        color: alpha(brandColors.primary[900], 0.54)
-    },
-    "& .MuiIconButton-root": {
-        color: "inherit"
-    }
-};
-
 export function SignInPage() {
+    const theme = useTheme();
+    const isLight = theme.palette.mode === "light";
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { signIn } = useAuth();
@@ -116,6 +67,82 @@ export function SignInPage() {
         ],
         []
     );
+
+    const fieldSurface = isLight ? alpha("#FFFFFF", 0.96) : alpha("#FFFFFF", 0.06);
+    const fieldBorder = isLight ? alpha(brandColors.primary[900], 0.12) : alpha(theme.palette.primary.light, 0.2);
+    const fieldHoverBorder = isLight ? alpha(brandColors.primary[500], 0.32) : alpha(theme.palette.primary.light, 0.34);
+    const fieldFocusBorder = isLight ? brandColors.primary[500] : theme.palette.primary.light;
+    const fieldFocusRing = isLight
+        ? alpha(brandColors.accent[100], 0.72)
+        : alpha(theme.palette.primary.main, 0.18);
+    const fieldLabelColor = isLight ? alpha(brandColors.primary[900], 0.68) : alpha("#FFFFFF", 0.7);
+    const fieldAdornmentColor = isLight ? alpha(brandColors.primary[900], 0.46) : alpha(theme.palette.primary.light, 0.82);
+    const fieldAutofillText = isLight ? brandColors.neutral.textPrimary : theme.palette.text.primary;
+
+    const fieldSx = {
+        "& .MuiInputLabel-root": {
+            color: fieldLabelColor
+        },
+        "& .MuiInputLabel-root.Mui-focused": {
+            color: fieldFocusBorder
+        },
+        "& .MuiInputLabel-root.MuiInputLabel-shrink": {
+            px: 0.6,
+            borderRadius: "999px",
+            bgcolor: theme.palette.background.paper
+        },
+        "& .MuiOutlinedInput-root": {
+            minHeight: 56,
+            borderRadius: loginFieldRadius,
+            backgroundColor: fieldSurface,
+            backdropFilter: "blur(10px)",
+            transition: "border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
+            "& fieldset": {
+                borderColor: fieldBorder
+            },
+            "&:hover fieldset": {
+                borderColor: fieldHoverBorder
+            },
+            "&.Mui-focused fieldset": {
+                borderColor: fieldFocusBorder
+            },
+            "&.Mui-focused": {
+                boxShadow: `0 0 0 4px ${fieldFocusRing}`
+            }
+        },
+        "& .MuiOutlinedInput-input": {
+            backgroundColor: "transparent",
+            color: theme.palette.text.primary
+        },
+        "& .MuiOutlinedInput-input:-webkit-autofill": {
+            WebkitTextFillColor: fieldAutofillText,
+            WebkitBoxShadow: `0 0 0 100px ${fieldSurface} inset`,
+            boxShadow: `0 0 0 100px ${fieldSurface} inset`,
+            caretColor: fieldAutofillText,
+            borderRadius: "inherit",
+            transition: "background-color 9999s ease-out 0s"
+        },
+        "& .MuiOutlinedInput-input:-webkit-autofill:hover": {
+            WebkitTextFillColor: fieldAutofillText,
+            WebkitBoxShadow: `0 0 0 100px ${fieldSurface} inset`,
+            boxShadow: `0 0 0 100px ${fieldSurface} inset`
+        },
+        "& .MuiOutlinedInput-input:-webkit-autofill:focus": {
+            WebkitTextFillColor: fieldAutofillText,
+            WebkitBoxShadow: `0 0 0 100px ${fieldSurface} inset`,
+            boxShadow: `0 0 0 100px ${fieldSurface} inset`
+        },
+        "& .MuiInputAdornment-positionStart": {
+            color: fieldAdornmentColor,
+            marginRight: 1
+        },
+        "& .MuiInputAdornment-positionEnd": {
+            color: fieldAdornmentColor
+        },
+        "& .MuiIconButton-root": {
+            color: "inherit"
+        }
+    };
 
     return (
         <Box
@@ -346,9 +373,7 @@ export function SignInPage() {
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                <MailOutlineRoundedIcon
-                                                    sx={{ color: alpha(brandColors.primary[900], 0.44) }}
-                                                />
+                                                <MailOutlineRoundedIcon />
                                             </InputAdornment>
                                         )
                                     }}

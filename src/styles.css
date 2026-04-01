@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+@import "tailwindcss";
 
 html,
 body,
@@ -6,11 +7,47 @@ body,
     min-height: 100%;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     margin: 0;
     font-family: "Inter", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 * {
     box-sizing: border-box;
+}
+
+@layer base {
+    body {
+        @apply bg-slate-50 text-slate-900;
+    }
+}
+
+@layer utilities {
+    .glass-panel {
+        @apply backdrop-blur-xl shadow-xl;
+    }
+
+    .gradient-mesh {
+        background-image:
+            radial-gradient(circle at top left, rgba(110, 168, 255, 0.18) 0%, transparent 30%),
+            radial-gradient(circle at 85% 20%, rgba(31, 168, 230, 0.16) 0%, transparent 22%);
+    }
+
+    .premium-grid {
+        background-image:
+            linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    .text-gradient-brand {
+        @apply bg-gradient-to-r from-[#0A0573] via-[#2F5BFF] to-[#1FA8E6] bg-clip-text text-transparent;
+    }
 }

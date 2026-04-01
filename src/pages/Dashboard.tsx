@@ -24,6 +24,7 @@ import { getPrimaryRole, hasRole } from "../auth/roles";
 import { DataPageSkeleton } from "../components/common/DataPageSkeleton";
 import { PageHero } from "../components/common/PageHero";
 import { StatCard } from "../components/common/StatCard";
+import { GradientButton } from "../components/ui";
 import { brandColors } from "../theme/colors";
 import { MotionCard } from "../ui/motion";
 import { api, getApiErrorMessage } from "../lib/api";
@@ -72,9 +73,9 @@ function AdminDashboardView() {
                 tone="surface"
                 actions={
                     <>
-                        <Button component={RouterLink} to="/staff" variant="contained" color="secondary">
+                        <GradientButton component={RouterLink} to="/staff">
                             Manage staff
-                        </Button>
+                        </GradientButton>
                         <Button component={RouterLink} to="/audit-logs" variant="outlined">
                             View audit logs
                         </Button>
@@ -251,9 +252,9 @@ function FundManagerDashboardView() {
                 tone="surface"
                 actions={
                     <>
-                        <Button component={RouterLink} to="/events/create" variant="contained" color="secondary">
+                        <GradientButton component={RouterLink} to="/events/create">
                             Launch event
-                        </Button>
+                        </GradientButton>
                         <Button component={RouterLink} to="/members" variant="outlined">
                             Manage members
                         </Button>
@@ -306,8 +307,8 @@ function FundManagerDashboardView() {
                                             sx={{
                                                 p: 1.75,
                                                 borderRadius: 2.5,
-                                                backgroundColor: alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.08 : 0.44),
-                                                borderColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.22 : 0.22)
+                                                backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.08 : 0.1),
+                                                borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.22 : 0.22)
                                             }}
                                         >
                                             <Stack spacing={1}>
@@ -328,14 +329,14 @@ function FundManagerDashboardView() {
                                                 <LinearProgress
                                                     variant="determinate"
                                                     value={event.progress}
-                                                    sx={{
-                                                        height: 10,
-                                                        borderRadius: 999,
-                                                        backgroundColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.14 : 0.18),
-                                                        "& .MuiLinearProgress-bar": {
-                                                            borderRadius: 999
-                                                        }
-                                                    }}
+                                                        sx={{
+                                                            height: 10,
+                                                            borderRadius: 999,
+                                                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.14 : 0.18),
+                                                            "& .MuiLinearProgress-bar": {
+                                                                borderRadius: 999
+                                                            }
+                                                        }}
                                                 />
                                                 <Grid container spacing={1.2}>
                                                     <Grid size={{ xs: 12, sm: 4 }}>
@@ -396,8 +397,8 @@ function FundManagerDashboardView() {
                                     sx={{
                                         p: 1.4,
                                         borderRadius: 2.25,
-                                        bgcolor: alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.08 : 0.36),
-                                        borderColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.24 : 0.16)
+                                        bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.08 : 0.08),
+                                        borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.24 : 0.16)
                                     }}
                                 >
                                     <Stack spacing={0.55}>
@@ -501,7 +502,7 @@ function FundManagerDashboardView() {
                                                         sx={{
                                                             height: 8,
                                                             borderRadius: 999,
-                                                            backgroundColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.14 : 0.18),
+                                                            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.14 : 0.18),
                                                             "& .MuiLinearProgress-bar": {
                                                                 borderRadius: 999
                                                             }
@@ -562,8 +563,8 @@ function FundManagerDashboardView() {
                                                 height: "100%",
                                                 p: 1.6,
                                                 borderRadius: 2.5,
-                                                bgcolor: alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.08 : 0.36),
-                                                borderColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.2 : 0.18)
+                                                bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.1 : 0.08),
+                                                borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.2 : 0.18)
                                             }}
                                         >
                                             <Stack spacing={1}>
@@ -575,8 +576,8 @@ function FundManagerDashboardView() {
                                                         display: "grid",
                                                         placeItems: "center",
                                                         fontWeight: 800,
-                                                        color: brandColors.primary[900],
-                                                        bgcolor: alpha(brandColors.primary[500], 0.12)
+                                                        color: theme.palette.mode === "dark" ? theme.palette.primary.light : brandColors.primary[900],
+                                                        bgcolor: alpha(theme.palette.primary.main, 0.12)
                                                     }}
                                                 >
                                                     {index + 1}
@@ -614,7 +615,7 @@ function FundManagerDashboardView() {
                                 sx={{
                                     p: 1.6,
                                     borderRadius: 2.5,
-                                    bgcolor: alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.08 : 0.36)
+                                    bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.1 : 0.08)
                                 }}
                             >
                                 <Stack spacing={1.1}>
@@ -623,8 +624,8 @@ function FundManagerDashboardView() {
                                         sx={{
                                             p: 1.4,
                                             borderRadius: 2.25,
-                                            bgcolor: alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.08 : 0.36),
-                                            borderColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.24 : 0.16)
+                                            bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.1 : 0.08),
+                                            borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.24 : 0.16)
                                         }}
                                     >
                                         <Stack spacing={0.9}>
@@ -673,9 +674,9 @@ function FundManagerDashboardView() {
                                     <Button component={RouterLink} to="/policies" variant="outlined" startIcon={<PolicyRoundedIcon />} fullWidth>
                                         Define Policies
                                     </Button>
-                                    <Button component={RouterLink} to="/contributions" variant="contained" startIcon={<ReceiptLongRoundedIcon />} fullWidth>
+                                    <GradientButton component={RouterLink} to="/contributions" startIcon={<ReceiptLongRoundedIcon />} fullWidth glow={false}>
                                         Open Ledger
-                                    </Button>
+                                    </GradientButton>
                                 </Stack>
                             </Paper>
                             <Grid container spacing={1.2}>
@@ -779,9 +780,9 @@ function MemberDashboardView() {
                 description="Members use Fund-Me to follow active contribution events, review obligations, and keep personal contribution history visible."
                 tone="surface"
                 actions={
-                    <Button component={RouterLink} to="/my-contributions" variant="contained" color="secondary">
+                    <GradientButton component={RouterLink} to="/my-contributions">
                         Open my contributions
-                    </Button>
+                    </GradientButton>
                 }
             />
 
@@ -839,9 +840,9 @@ function MemberDashboardView() {
                                         <TableCell>{formatCurrency(Math.max(Number(row.expected_amount || 0) - Number(row.amount_paid || 0), 0))}</TableCell>
                                         <TableCell>{formatDate(row.events?.deadline || null)}</TableCell>
                                         <TableCell align="right">
-                                            <Button component={RouterLink} to={`/events?pay=${row.event_id}`} variant="contained" size="small">
+                                            <GradientButton component={RouterLink} to={`/events?pay=${row.event_id}`} size="small" glow={false}>
                                                 Pay Contribution
-                                            </Button>
+                                            </GradientButton>
                                         </TableCell>
                                     </TableRow>
                                 ))}

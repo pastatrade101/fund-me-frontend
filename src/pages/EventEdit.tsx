@@ -1,9 +1,12 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import PersonSearchRoundedIcon from "@mui/icons-material/PersonSearchRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
     Alert,
+    Autocomplete,
+    Box,
     Button,
     Chip,
     Grid,
@@ -17,11 +20,14 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { useAuth } from "../auth/AuthContext";
+import { AppDateField } from "../components/common/AppDateField";
 import { DataPageSkeleton } from "../components/common/DataPageSkeleton";
 import { PageHero } from "../components/common/PageHero";
 import { api, getApiErrorMessage } from "../lib/api";
 import { endpoints } from "../lib/endpoints";
-import type { ContributionEventDetail } from "../types/api";
+import type { ContributionEventDetail, Member } from "../types/api";
+import { buildBeneficiaryOptions, fetchActiveBeneficiaryMembers, findBeneficiaryOptionByName } from "../utils/event-beneficiary";
 import { familyMemberOptions, getContributorLabel, getEventTypeLabel, getFamilyLabel } from "../utils/policy-config";
 import { formatCurrency, formatDate } from "./page-format";
 
@@ -30,15 +36,19 @@ function toDeadlineIso(value: string) {
 }
 
 export function EventEditPage() {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const { id = "" } = useParams();
     const [detail, setDetail] = useState<ContributionEventDetail | null>(null);
+    const [beneficiaryMembers, setBeneficiaryMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingBeneficiaryMembers, setLoadingBeneficiaryMembers] = useState(true);
     const [saving, setSaving] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [draft, setDraft] = useState({
         title: "",
+        beneficiary_member_id: "",
         beneficiary_name: "",
         relationship_to_member: "member" as "member" | "spouse" | "parent" | "child",
         description: "",
@@ -53,6 +63,7 @@ export function EventEditPage() {
                 setDetail(nextDetail);
                 setDraft({
                     title: nextDetail.event.title || "",
+                    beneficiary_member_id: "",
                     beneficiary_name: nextDetail.event.beneficiary_name || "",
                     relationship_to_member: nextDetail.event.relationship_to_member,
                     description: nextDetail.event.description || "",
@@ -63,6 +74,57 @@ export function EventEditPage() {
             .catch((error) => setErrorMessage(getApiErrorMessage(error, "Unable to load event details for editing.")))
             .finally(() => setLoading(false));
     }, [id]);
+
+    useEffect(() => {
+        fetchActiveBeneficiaryMembers()
+            .then((members) => setBeneficiaryMembers(members))
+            .catch((error) => setErrorMessage(getApiErrorMessage(error, "Unable to load members for beneficiary selection.")))
+            .finally(() => setLoadingBeneficiaryMembers(false));
+    }, []);
+
+    const beneficiaryOptions = useMemo(() => buildBeneficiaryOptions(beneficiaryMembers, user), [beneficiaryMembers, user]);
+    const selectedBeneficiary = beneficiaryOptions.find((option) => option.id === draft.beneficiary_member_id) || null;
+
+    useEffect(() => {
+        if (!detail || draft.relationship_to_member !== "member" || draft.beneficiary_member_id) {
+            return;
+        }
+
+        const matchedBeneficiary = findBeneficiaryOptionByName(beneficiaryOptions, draft.beneficiary_name);
+
+        if (!matchedBeneficiary) {
+            return;
+        }
+
+        setDraft((current) => ({
+            ...current,
+            beneficiary_member_id: matchedBeneficiary.id,
+            beneficiary_name: matchedBeneficiary.full_name
+        }));
+    }, [beneficiaryOptions, detail, draft.beneficiary_member_id, draft.beneficiary_name, draft.relationship_to_member]);
+
+    useEffect(() => {
+        if (draft.relationship_to_member !== "member" || !selectedBeneficiary) {
+            return;
+        }
+
+        if (draft.beneficiary_name === selectedBeneficiary.full_name) {
+            return;
+        }
+
+        setDraft((current) => ({
+            ...current,
+            beneficiary_name: selectedBeneficiary.full_name
+        }));
+    }, [draft.beneficiary_name, draft.relationship_to_member, selectedBeneficiary]);
+
+    useEffect(() => {
+        if (!errorMessage) {
+            return;
+        }
+
+        setErrorMessage("");
+    }, [draft, errorMessage]);
 
     const policySummary = useMemo(() => {
         if (!detail) {
@@ -144,12 +206,70 @@ export function EventEditPage() {
                                     />
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 6 }}>
+                                    <Autocomplete
+                                        options={beneficiaryOptions}
+                                        value={selectedBeneficiary}
+                                        loading={loadingBeneficiaryMembers}
+                                        disabled={eventLocked || saving}
+                                        onChange={(_, value) => {
+                                            setDraft((current) => ({
+                                                ...current,
+                                                beneficiary_member_id: value?.id || "",
+                                                beneficiary_name: current.relationship_to_member === "member"
+                                                    ? (value?.full_name || "")
+                                                    : current.beneficiary_name
+                                            }));
+                                        }}
+                                        getOptionLabel={(option) => option.full_name}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderOption={(props, option) => (
+                                            <Box component="li" {...props}>
+                                                <Stack spacing={0.2}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                        {option.full_name}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {option.subtitle}
+                                                    </Typography>
+                                                </Stack>
+                                            </Box>
+                                        )}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label={draft.relationship_to_member === "member" ? "Beneficiary member" : "Related member"}
+                                                helperText={
+                                                    draft.relationship_to_member === "member"
+                                                        ? "Select the member who is directly receiving the support. Your own account is included."
+                                                        : "Select the member record first, then enter the spouse, parent, or child name below."
+                                                }
+                                                InputProps={{
+                                                    ...params.InputProps,
+                                                    startAdornment: (
+                                                        <>
+                                                            <InputAdornment position="start">
+                                                                <PersonSearchRoundedIcon fontSize="small" />
+                                                            </InputAdornment>
+                                                            {params.InputProps.startAdornment}
+                                                        </>
+                                                    )
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
-                                        label="Beneficiary name"
+                                        label={draft.relationship_to_member === "member" ? "Beneficiary name" : "Relative beneficiary name"}
                                         fullWidth
                                         value={draft.beneficiary_name}
-                                        disabled={eventLocked || saving}
+                                        disabled={eventLocked || saving || draft.relationship_to_member === "member"}
                                         onChange={(event) => setDraft((current) => ({ ...current, beneficiary_name: event.target.value }))}
+                                        helperText={
+                                            draft.relationship_to_member === "member"
+                                                ? "Loaded automatically from the selected member record."
+                                                : "Enter the spouse, parent, or child receiving the support."
+                                        }
                                     />
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 6 }}>
@@ -159,7 +279,19 @@ export function EventEditPage() {
                                         fullWidth
                                         value={draft.relationship_to_member}
                                         disabled={eventLocked || saving}
-                                        onChange={(event) => setDraft((current) => ({ ...current, relationship_to_member: event.target.value as typeof current.relationship_to_member }))}
+                                        onChange={(event) => setDraft((current) => {
+                                            const nextRelationship = event.target.value as typeof current.relationship_to_member;
+                                            const currentSelectedBeneficiary = beneficiaryOptions.find((option) => option.id === current.beneficiary_member_id) || null;
+                                            const nextBeneficiaryName = nextRelationship === "member"
+                                                ? (currentSelectedBeneficiary?.full_name || "")
+                                                : (currentSelectedBeneficiary && current.beneficiary_name === currentSelectedBeneficiary.full_name ? "" : current.beneficiary_name);
+
+                                            return {
+                                                ...current,
+                                                relationship_to_member: nextRelationship,
+                                                beneficiary_name: nextBeneficiaryName
+                                            };
+                                        })}
                                     >
                                         {familyMemberOptions.map((option) => (
                                             <MenuItem key={option.value} value={option.value}>
@@ -167,6 +299,16 @@ export function EventEditPage() {
                                             </MenuItem>
                                         ))}
                                     </TextField>
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <AppDateField
+                                        label="Deadline"
+                                        value={draft.deadline}
+                                        onChange={(value) => setDraft((current) => ({ ...current, deadline: value }))}
+                                        helperText={`Current deadline ${formatDate(detail.event.deadline)}`}
+                                        disabled={eventLocked || saving}
+                                        disablePast
+                                    />
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField
@@ -179,18 +321,6 @@ export function EventEditPage() {
                                         InputProps={{
                                             startAdornment: <InputAdornment position="start">TSH</InputAdornment>
                                         }}
-                                    />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <TextField
-                                        type="date"
-                                        label="Deadline"
-                                        fullWidth
-                                        disabled={eventLocked || saving}
-                                        InputLabelProps={{ shrink: true }}
-                                        value={draft.deadline}
-                                        onChange={(event) => setDraft((current) => ({ ...current, deadline: event.target.value }))}
-                                        helperText={`Current deadline ${formatDate(detail.event.deadline)}`}
                                     />
                                 </Grid>
                                 <Grid size={{ xs: 12 }}>
@@ -214,7 +344,7 @@ export function EventEditPage() {
                                 <Button
                                     variant="contained"
                                     startIcon={<SaveRoundedIcon />}
-                                    disabled={eventLocked || saving || !draft.title.trim() || !draft.beneficiary_name.trim() || !draft.deadline || !draft.target_amount}
+                                    disabled={eventLocked || saving || !draft.title.trim() || !draft.beneficiary_member_id || !draft.beneficiary_name.trim() || !draft.deadline || !draft.target_amount}
                                     onClick={async () => {
                                         try {
                                             setSaving(true);

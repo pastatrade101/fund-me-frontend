@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import type { ReactNode } from "react";
 
-import { brandColors, darkThemeColors } from "../../theme/colors";
+import { GlassCard } from "../ui/GlassCard";
 
 interface PageHeroProps {
     eyebrow: string;
@@ -15,44 +15,45 @@ interface PageHeroProps {
 export function PageHero({ eyebrow, title, description, actions, tone = "gradient" }: PageHeroProps) {
     const theme = useTheme();
     const isSurface = tone === "surface";
-    const isDarkSurface = isSurface && theme.palette.mode === "dark";
+    const isLight = theme.palette.mode === "light";
 
     return (
-        <Box
+        <GlassCard
+            tint={isSurface ? "strong" : "dark"}
+            className={isSurface ? "glass-panel" : "glass-panel premium-grid"}
             sx={{
-                p: { xs: 2, md: 3 },
-                borderRadius: 2.5,
-                border: `1px solid ${
-                    isDarkSurface
-                        ? alpha(brandColors.warning, 0.24)
-                        : alpha(brandColors.primary[300], isSurface ? 0.18 : 0.3)
-                }`,
-                background: isSurface
-                    ? (
-                        isDarkSurface
-                            ? `linear-gradient(180deg, ${alpha(darkThemeColors.paper, 0.98)} 0%, ${alpha("#111827", 0.98)} 100%)`
-                            : `linear-gradient(180deg, ${alpha(brandColors.primary[100], 0.34)} 0%, #FFFFFF 68%)`
-                    )
-                    : "var(--workplace-gradient)",
-                color: isSurface ? (isDarkSurface ? darkThemeColors.textPrimary : brandColors.neutral.textPrimary) : "#FFFFFF",
-                boxShadow: isSurface
-                    ? (
-                        isDarkSurface
-                            ? "0 12px 30px rgba(0, 0, 0, 0.22)"
-                            : "0 12px 30px rgba(15, 23, 42, 0.04)"
-                    )
-                    : "none"
+                p: { xs: 2.4, md: 3.25 },
+                borderRadius: theme.fundMe.radius.xl,
+                background: isSurface ? theme.fundMe.gradients.hero : theme.fundMe.gradients.accent,
+                color: isSurface ? "text.primary" : "#FFFFFF",
+                boxShadow: isSurface ? theme.fundMe.shadows.glass : theme.fundMe.shadows.lift
             }}
         >
-            <Stack direction={{ xs: "column", lg: "row" }} spacing={2} justifyContent="space-between">
-                <Stack spacing={1}>
+            <Box
+                sx={{
+                    position: "absolute",
+                    inset: 0,
+                    background: isSurface
+                        ? theme.fundMe.gradients.spotlight
+                        : `radial-gradient(circle at top right, ${alpha("#FFFFFF", 0.14)} 0%, transparent 32%)`,
+                    pointerEvents: "none"
+                }}
+            />
+            <Stack
+                direction={{ xs: "column", lg: "row" }}
+                spacing={2.25}
+                justifyContent="space-between"
+                sx={{ position: "relative", zIndex: 1 }}
+            >
+                <Stack spacing={1.1}>
                     <Typography
                         variant="overline"
                         sx={{
                             color: isSurface
-                                ? (isDarkSurface ? "#FDE68A" : brandColors.primary[700])
-                                : alpha("#FFFFFF", 0.8),
-                            letterSpacing: 2.5
+                                ? (isLight ? theme.palette.primary.dark : theme.palette.warning.light)
+                                : alpha("#FFFFFF", 0.78),
+                            letterSpacing: 2.8,
+                            fontWeight: 700
                         }}
                     >
                         {eyebrow}
@@ -63,46 +64,35 @@ export function PageHero({ eyebrow, title, description, actions, tone = "gradien
                     <Typography
                         variant="body1"
                         sx={{
-                            maxWidth: 820,
-                            color: isSurface
-                                ? (isDarkSurface ? darkThemeColors.textSecondary : brandColors.neutral.textSecondary)
-                                : alpha("#FFFFFF", 0.88)
+                            maxWidth: 840,
+                            color: isSurface ? "text.secondary" : alpha("#FFFFFF", 0.84)
                         }}
                     >
                         {description}
                     </Typography>
                 </Stack>
+
                 {actions ? (
                     <Stack
-                        direction="row"
+                        direction={{ xs: "column", sm: "row" }}
                         spacing={1}
                         alignItems="flex-start"
-                        sx={
-                            isDarkSurface
-                                ? {
-                                    "& .MuiButton-contained": {
-                                        bgcolor: brandColors.warning,
-                                        color: "#0F172A",
-                                        "&:hover": {
-                                            bgcolor: "#FBBF24"
-                                        }
-                                    },
-                                    "& .MuiButton-outlined": {
-                                        color: "#FDE68A",
-                                        borderColor: alpha(brandColors.warning, 0.4),
-                                        "&:hover": {
-                                            borderColor: alpha(brandColors.warning, 0.56),
-                                            backgroundColor: alpha(brandColors.warning, 0.12)
-                                        }
-                                    }
-                                }
-                                : undefined
-                        }
+                        sx={{
+                            minWidth: { lg: 240 },
+                            "& .MuiButton-outlined": {
+                                borderColor: isSurface
+                                    ? alpha(theme.palette.primary.main, 0.16)
+                                    : alpha("#FFFFFF", 0.2),
+                                color: isSurface ? "text.primary" : "#FFFFFF",
+                                backgroundColor: isSurface ? alpha("#FFFFFF", 0.46) : alpha("#FFFFFF", 0.06),
+                                backdropFilter: `blur(${theme.fundMe.blur.sm})`
+                            }
+                        }}
                     >
                         {actions}
                     </Stack>
                 ) : null}
             </Stack>
-        </Box>
+        </GlassCard>
     );
 }

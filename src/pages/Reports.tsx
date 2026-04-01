@@ -440,8 +440,8 @@ export function ReportsPage() {
             sx: {
                 px: 2,
                 py: 1.5,
-                background: alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.12 : 0.55),
-                borderBottom: `1px solid ${alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.28 : 0.2)}`
+                background: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.12 : 0.08),
+                borderBottom: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.28 : 0.2)}`
             }
         },
         positionToolbarAlertBanner: "bottom",

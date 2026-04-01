@@ -271,8 +271,10 @@ export function ContributionsPage() {
                 sx={{
                     p: { xs: 2, md: 2.5 },
                     borderRadius: 3,
-                    borderColor: alpha(brandColors.primary[300], theme.palette.mode === "dark" ? 0.24 : 0.16),
-                    background: `linear-gradient(180deg, ${alpha(brandColors.primary[100], theme.palette.mode === "dark" ? 0.08 : 0.22)} 0%, #FFFFFF 72%)`,
+                    borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.24 : 0.16),
+                    background: theme.palette.mode === "dark"
+                        ? `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.background.paper, 0.96)} 72%)`
+                        : `linear-gradient(180deg, ${alpha(brandColors.primary[100], 0.22)} 0%, #FFFFFF 72%)`,
                     boxShadow: theme.palette.mode === "dark" ? "none" : "0 12px 30px rgba(15, 23, 42, 0.04)"
                 }}
             >

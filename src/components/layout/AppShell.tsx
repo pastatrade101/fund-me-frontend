@@ -43,7 +43,7 @@ import { alpha } from "@mui/material/styles";
 import { useState, type MouseEvent } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { brandColors, workplaceGradient } from "../../theme/colors";
+import { brandColors } from "../../theme/colors";
 import { useUI } from "../../ui/UIProvider";
 import { useAuth } from "../../auth/AuthContext";
 import { formatRoleLabel, getPrimaryRole, type AppRole } from "../../auth/roles";
@@ -199,12 +199,12 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
     const { user, signOut } = useAuth();
     const navItems = navItemsByRole[primaryRole];
     const isPortalShell = primaryRole === "member" || primaryRole === "fund_manager";
-    const isWarmManagerDark = isPortalShell && theme === "dark";
-    const accentColor = isWarmManagerDark ? "#FBBF24" : brandColors.primary[900];
-    const accentColorSoft = isWarmManagerDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[100], 0.56);
-    const accentBorderColor = isWarmManagerDark ? alpha(brandColors.warning, 0.28) : alpha(brandColors.primary[300], 0.34);
-    const accentTextColor = isWarmManagerDark ? "#FDE68A" : brandColors.primary[900];
-    const accentIconColor = isWarmManagerDark ? "#FCD34D" : brandColors.primary[700];
+    const isWarmDark = theme === "dark";
+    const accentColor = isWarmDark ? "#FBBF24" : brandColors.primary[900];
+    const accentColorSoft = isWarmDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[100], 0.56);
+    const accentBorderColor = isWarmDark ? alpha(brandColors.warning, 0.28) : alpha(brandColors.primary[300], 0.34);
+    const accentTextColor = isWarmDark ? "#FDE68A" : brandColors.primary[900];
+    const accentIconColor = isWarmDark ? "#FCD34D" : brandColors.primary[700];
     const member = user?.member;
     const staff = user?.staff;
     const displayName = member?.full_name || staff?.full_name || user?.email?.split("@")[0] || "User";
@@ -256,9 +256,9 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                             sx={{
                                 width: 44,
                                 height: 44,
-                                bgcolor: alpha("#FFFFFF", isWarmManagerDark ? 0.08 : 0.14),
+                                bgcolor: alpha("#FFFFFF", isWarmDark ? 0.08 : 0.14),
                                 boxShadow: `0 12px 24px ${
-                                    isWarmManagerDark ? alpha(brandColors.warning, 0.18) : alpha(brandColors.primary[900], 0.2)
+                                    isWarmDark ? alpha(brandColors.warning, 0.18) : alpha(brandColors.primary[900], 0.2)
                                 }`
                             }}
                         >
@@ -295,8 +295,8 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                                 p: 1.5,
                                 mb: 1.5,
                                 borderRadius: 2.5,
-                                border: `1px solid ${isWarmManagerDark ? alpha(brandColors.warning, 0.22) : alpha(brandColors.primary[300], 0.18)}`,
-                                background: isWarmManagerDark
+                                border: `1px solid ${isWarmDark ? alpha(brandColors.warning, 0.22) : alpha(brandColors.primary[300], 0.18)}`,
+                                background: isWarmDark
                                     ? `linear-gradient(180deg, ${alpha("#FFFFFF", 0.04)} 0%, ${alpha(brandColors.warning, 0.06)} 100%)`
                                     : `linear-gradient(180deg, ${alpha(brandColors.primary[100], 0.34)} 0%, #FFFFFF 100%)`
                             }}
@@ -307,8 +307,8 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                                         sx={{
                                             width: 44,
                                             height: 44,
-                                            bgcolor: isWarmManagerDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.14),
-                                            color: isWarmManagerDark ? "#FDE68A" : brandColors.primary[900],
+                                            bgcolor: isWarmDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.14),
+                                            color: isWarmDark ? "#FDE68A" : brandColors.primary[900],
                                             fontWeight: 800
                                         }}
                                     >
@@ -344,8 +344,8 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                                 sx={{
                                     width: 52,
                                     height: 52,
-                                    bgcolor: isWarmManagerDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.14),
-                                    color: isWarmManagerDark ? "#FDE68A" : brandColors.primary[900],
+                                    bgcolor: isWarmDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.14),
+                                    color: isWarmDark ? "#FDE68A" : brandColors.primary[900],
                                     fontWeight: 800
                                 }}
                             >
@@ -385,7 +385,7 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                                         boxShadow: selected ? `inset 0 0 0 1px ${alpha("#FFFFFF", 0.45)}` : "none",
                                         color: selected ? accentTextColor : "text.primary",
                                         "&:hover": {
-                                            background: selected ? accentColorSoft : alpha(isWarmManagerDark ? brandColors.warning : brandColors.primary[100], isWarmManagerDark ? 0.08 : 0.3)
+                                            background: selected ? accentColorSoft : alpha(isWarmDark ? brandColors.warning : brandColors.primary[100], isWarmDark ? 0.08 : 0.3)
                                         },
                                         "&.Mui-selected": {
                                             background: accentColorSoft,
@@ -410,7 +410,7 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                                             borderRadius: 1.75,
                                             display: "grid",
                                             placeItems: "center",
-                                            bgcolor: selected ? (isWarmManagerDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.12)) : "transparent",
+                                            bgcolor: selected ? (isWarmDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.12)) : "transparent",
                                             color: accentIconColor
                                         }}
                                     >
@@ -445,8 +445,8 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                                 p: 1.5,
                                 mb: 1,
                                 borderRadius: 2.5,
-                                border: `1px solid ${isWarmManagerDark ? alpha(brandColors.warning, 0.22) : alpha(brandColors.primary[300], 0.18)}`,
-                                background: isWarmManagerDark
+                                border: `1px solid ${isWarmDark ? alpha(brandColors.warning, 0.22) : alpha(brandColors.primary[300], 0.18)}`,
+                                background: isWarmDark
                                     ? `linear-gradient(180deg, ${alpha("#FFFFFF", 0.04)} 0%, ${alpha(brandColors.warning, 0.05)} 100%)`
                                     : `linear-gradient(180deg, ${alpha(brandColors.accent[100], 0.44)} 0%, #FFFFFF 100%)`
                             }}
@@ -503,7 +503,7 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                 justifyContent={collapsed ? "center" : "flex-start"}
                 sx={{ mb: 2.5, minHeight: 48 }}
             >
-                <Avatar sx={{ bgcolor: brandColors.primary[900], width: 44, height: 44 }}>
+                <Avatar sx={{ bgcolor: isWarmDark ? alpha(brandColors.warning, 0.16) : brandColors.primary[900], color: isWarmDark ? "#FDE68A" : "inherit", width: 44, height: 44 }}>
                     <BrandLogo />
                 </Avatar>
                 {!collapsed ? (
@@ -532,8 +532,8 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                                 borderRadius: 1,
                                 px: collapsed ? 1.25 : 1.5,
                                 justifyContent: collapsed ? "center" : "flex-start",
-                                bgcolor: selected ? alpha(brandColors.primary[100], 0.9) : "transparent",
-                                color: selected ? (isWarmManagerDark ? "#FDE68A" : brandColors.primary[900]) : "text.primary"
+                                bgcolor: selected ? alpha(isWarmDark ? brandColors.warning : brandColors.primary[100], isWarmDark ? 0.14 : 0.9) : "transparent",
+                                color: selected ? (isWarmDark ? "#FDE68A" : brandColors.primary[900]) : "text.primary"
                             }}
                         >
                             <ListItemIcon
@@ -615,11 +615,11 @@ export function AppShell() {
     const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
     const primaryRole = getPrimaryRole(user);
     const isPortalShell = primaryRole === "member" || primaryRole === "fund_manager";
-    const isWarmManagerDark = isPortalShell && theme === "dark";
-    const shellAccent = isWarmManagerDark ? "#FBBF24" : brandColors.primary[900];
-    const shellAccentSoft = isWarmManagerDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.12);
-    const shellAccentBorder = isWarmManagerDark ? alpha(brandColors.warning, 0.28) : alpha(brandColors.primary[300], 0.2);
-    const shellAccentText = isWarmManagerDark ? "#FDE68A" : brandColors.primary[900];
+    const isWarmDark = theme === "dark";
+    const shellAccent = isWarmDark ? "#FBBF24" : brandColors.primary[900];
+    const shellAccentSoft = isWarmDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.12);
+    const shellAccentBorder = isWarmDark ? alpha(brandColors.warning, 0.28) : alpha(brandColors.primary[300], 0.2);
+    const shellAccentText = isWarmDark ? "#FDE68A" : brandColors.primary[900];
     const desktopSidebarWidth = isPortalShell
         ? (desktopSidebarExpanded ? memberExpandedSidebarWidth : memberCollapsedSidebarWidth)
         : (desktopSidebarExpanded ? defaultExpandedSidebarWidth : defaultCollapsedSidebarWidth);
@@ -674,8 +674,8 @@ export function AppShell() {
                             edge="start"
                             sx={{
                                 borderRadius: 1.5,
-                                border: isWarmManagerDark ? `1px solid ${shellAccentBorder}` : (theme) => `1px solid ${theme.palette.divider}`,
-                                color: isWarmManagerDark ? shellAccentText : "inherit"
+                                border: isWarmDark ? `1px solid ${shellAccentBorder}` : (theme) => `1px solid ${theme.palette.divider}`,
+                                color: isWarmDark ? shellAccentText : "inherit"
                             }}
                         >
                             {isDesktop && desktopSidebarExpanded ? <MenuOpenRoundedIcon /> : <MenuRoundedIcon />}
@@ -712,7 +712,7 @@ export function AppShell() {
                             placeholder={primaryRole === "member" ? "Search member workspace" : "Search operations workspace"}
                             startAdornment={
                                 <InputAdornment position="start">
-                                    <SearchRoundedIcon fontSize="small" sx={{ color: isWarmManagerDark ? shellAccentText : "inherit" }} />
+                                    <SearchRoundedIcon fontSize="small" sx={{ color: isWarmDark ? shellAccentText : "inherit" }} />
                                 </InputAdornment>
                             }
                             sx={{
@@ -721,10 +721,10 @@ export function AppShell() {
                                 borderRadius: 999,
                                 bgcolor: "background.paper",
                                 "& .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: isWarmManagerDark ? alpha(brandColors.warning, 0.26) : alpha(brandColors.primary[300], 0.28)
+                                    borderColor: isWarmDark ? alpha(brandColors.warning, 0.26) : alpha(brandColors.primary[300], 0.28)
                                 },
                                 "& .MuiOutlinedInput-input": {
-                                    color: isWarmManagerDark ? "#F8FAFC" : "inherit"
+                                    color: isWarmDark ? "#F8FAFC" : "inherit"
                                 }
                             }}
                         />
@@ -732,8 +732,8 @@ export function AppShell() {
                         <IconButton
                             sx={{
                                 borderRadius: 1.5,
-                                border: isWarmManagerDark ? `1px solid ${shellAccentBorder}` : (theme) => `1px solid ${theme.palette.divider}`,
-                                color: isWarmManagerDark ? shellAccentText : "inherit"
+                                border: isWarmDark ? `1px solid ${shellAccentBorder}` : (theme) => `1px solid ${theme.palette.divider}`,
+                                color: isWarmDark ? shellAccentText : "inherit"
                             }}
                         >
                             <Badge color="error" variant="dot">
@@ -745,8 +745,8 @@ export function AppShell() {
                             onClick={toggleTheme}
                             sx={{
                                 borderRadius: 1.5,
-                                border: isWarmManagerDark ? `1px solid ${shellAccentBorder}` : (theme) => `1px solid ${theme.palette.divider}`,
-                                color: isWarmManagerDark ? shellAccentText : "inherit"
+                                border: isWarmDark ? `1px solid ${shellAccentBorder}` : (theme) => `1px solid ${theme.palette.divider}`,
+                                color: isWarmDark ? shellAccentText : "inherit"
                             }}
                         >
                             {theme === "dark" ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />}
