@@ -10,6 +10,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
     const darkWarmPrimary = "#FBBF24";
     const darkWarmPrimaryDark = "#F59E0B";
     const darkWarmPrimaryLight = "#FDE68A";
+    const appRadius = 4;
 
     const muiTheme = createTheme({
         palette: {
@@ -41,7 +42,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
             divider: isLight ? brandColors.neutral.border : darkThemeColors.border
         },
         shape: {
-            borderRadius: 8
+            borderRadius: appRadius
         },
         typography: {
             fontFamily: "\"Inter\", \"Segoe UI\", sans-serif",
@@ -55,7 +56,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
                 styleOverrides: {
                     root: {
                         backgroundImage: "none",
-                        borderRadius: 8,
+                        borderRadius: appRadius,
                         border: `1px solid ${isLight ? brandColors.neutral.border : darkThemeColors.border}`
                     }
                 }
@@ -63,6 +64,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
             MuiCard: {
                 styleOverrides: {
                     root: {
+                        borderRadius: appRadius,
                         boxShadow: isLight
                             ? "0 14px 32px rgba(15, 23, 42, 0.06)"
                             : "0 14px 32px rgba(0, 0, 0, 0.25)"
@@ -76,7 +78,7 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
                 styleOverrides: {
                     root: {
                         minHeight: 40,
-                        borderRadius: 8,
+                        borderRadius: appRadius,
                         paddingInline: 16
                     }
                 }
@@ -84,14 +86,56 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
             MuiOutlinedInput: {
                 styleOverrides: {
                     root: {
-                        borderRadius: 8,
+                        borderRadius: appRadius,
                         backgroundColor: isLight ? "#FFFFFF" : alpha("#FFFFFF", 0.04)
+                    }
+                }
+            },
+            MuiFilledInput: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: appRadius
+                    }
+                }
+            },
+            MuiInputBase: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: appRadius
                     }
                 }
             },
             MuiChip: {
                 styleOverrides: {
-                    root: { borderRadius: 7 }
+                    root: { borderRadius: appRadius - 1 }
+                }
+            },
+            MuiAlert: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: appRadius
+                    }
+                }
+            },
+            MuiDialog: {
+                styleOverrides: {
+                    paper: {
+                        borderRadius: appRadius + 2
+                    }
+                }
+            },
+            MuiMenu: {
+                styleOverrides: {
+                    paper: {
+                        borderRadius: appRadius
+                    }
+                }
+            },
+            MuiPopover: {
+                styleOverrides: {
+                    paper: {
+                        borderRadius: appRadius
+                    }
                 }
             }
         }

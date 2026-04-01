@@ -12,7 +12,6 @@ import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
@@ -54,6 +53,7 @@ const defaultCollapsedSidebarWidth = 88;
 const memberExpandedSidebarWidth = 340;
 const memberCollapsedSidebarWidth = 96;
 const appBarHeight = 76;
+const brandLogoSrc = "/changa2.svg";
 
 type NavItem = {
     to: string;
@@ -61,6 +61,26 @@ type NavItem = {
     icon: typeof DashboardRoundedIcon;
     description?: string;
 };
+
+function BrandLogo({
+    size = 44
+}: {
+    size?: number;
+}) {
+    return (
+        <Box
+            component="img"
+            src={brandLogoSrc}
+            alt="Changa logo"
+            sx={{
+                width: size,
+                height: size,
+                objectFit: "contain",
+                display: "block"
+            }}
+        />
+    );
+}
 
 const navItemsByRole: Record<AppRole, NavItem[]> = {
     admin: [
@@ -236,14 +256,13 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                             sx={{
                                 width: 44,
                                 height: 44,
-                                bgcolor: isWarmManagerDark ? alpha(brandColors.warning, 0.18) : brandColors.primary[900],
-                                color: isWarmManagerDark ? "#FDE68A" : "#FFFFFF",
+                                bgcolor: alpha("#FFFFFF", isWarmManagerDark ? 0.08 : 0.14),
                                 boxShadow: `0 12px 24px ${
                                     isWarmManagerDark ? alpha(brandColors.warning, 0.18) : alpha(brandColors.primary[900], 0.2)
                                 }`
                             }}
                         >
-                            <AccountBalanceWalletRoundedIcon />
+                            <BrandLogo />
                         </Avatar>
                         {!collapsed ? (
                             <Box>
@@ -485,7 +504,7 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                 sx={{ mb: 2.5, minHeight: 48 }}
             >
                 <Avatar sx={{ bgcolor: brandColors.primary[900], width: 44, height: 44 }}>
-                    <AccountBalanceWalletRoundedIcon />
+                    <BrandLogo />
                 </Avatar>
                 {!collapsed ? (
                     <Box>
@@ -662,6 +681,18 @@ export function AppShell() {
                             {isDesktop && desktopSidebarExpanded ? <MenuOpenRoundedIcon /> : <MenuRoundedIcon />}
                         </IconButton>
 
+                        <Box
+                            component="img"
+                            src={brandLogoSrc}
+                            alt="Changa logo"
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                objectFit: "contain",
+                                display: { xs: "none", sm: "block" }
+                            }}
+                        />
+
                         <Typography
                             variant="overline"
                             sx={{
@@ -751,6 +782,16 @@ export function AppShell() {
                         >
                             {isDesktop && desktopSidebarExpanded ? <MenuOpenRoundedIcon /> : <MenuRoundedIcon />}
                         </IconButton>
+                        <Box
+                            component="img"
+                            src={brandLogoSrc}
+                            alt="Changa logo"
+                            sx={{
+                                width: 32,
+                                height: 32,
+                                objectFit: "contain"
+                            }}
+                        />
                         <Box sx={{ flex: 1 }}>
                             <Typography variant="h6" sx={{ fontWeight: 800 }}>
                                 {workspaceCopy.title}

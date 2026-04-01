@@ -8,6 +8,8 @@ import { hasAnyRole, type AppRole } from "./auth/roles";
 const AppShell = lazy(() => import("./components/layout/AppShell").then((module) => ({ default: module.AppShell })));
 const SignInPage = lazy(() => import("./pages/SignIn").then((module) => ({ default: module.SignInPage })));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPassword").then((module) => ({ default: module.ResetPasswordPage })));
+const TermsAndConditionsPage = lazy(() => import("./pages/TermsAndConditions").then((module) => ({ default: module.TermsAndConditionsPage })));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicy").then((module) => ({ default: module.PrivacyPolicyPage })));
 const DashboardPage = lazy(() => import("./pages/Dashboard").then((module) => ({ default: module.DashboardPage })));
 const MembersPage = lazy(() => import("./pages/Members").then((module) => ({ default: module.MembersPage })));
 const PoliciesPage = lazy(() => import("./pages/Policies").then((module) => ({ default: module.PoliciesPage })));
@@ -79,6 +81,8 @@ export default function App() {
         <Routes>
             <Route path="/signin" element={withRouteSuspense(<SignInPage />)} />
             <Route path="/reset-password" element={withRouteSuspense(<ResetPasswordPage />)} />
+            <Route path="/terms-and-conditions" element={withRouteSuspense(<TermsAndConditionsPage />)} />
+            <Route path="/privacy-policy" element={withRouteSuspense(<PrivacyPolicyPage />)} />
             <Route
                 path="/"
                 element={

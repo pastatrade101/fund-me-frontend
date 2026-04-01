@@ -4,7 +4,6 @@ import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
-import WorkspacesRoundedIcon from "@mui/icons-material/WorkspacesRounded";
 import {
     Alert,
     alpha,
@@ -25,17 +24,23 @@ import {
     Typography
 } from "@mui/material";
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 
 import { useAuth, toAuthErrorMessage } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import { endpoints } from "../lib/endpoints";
 import { brandColors } from "../theme/colors";
 
+const loginShellRadius = "10px";
+const loginInnerRadius = "8px";
+const loginChipRadius = "6px";
+const loginFieldRadius = "8px";
+const loginButtonRadius = "8px";
+
 const fieldSx = {
     "& .MuiOutlinedInput-root": {
         minHeight: 56,
-        borderRadius: "16px",
+        borderRadius: loginFieldRadius,
         backgroundColor: alpha("#FFFFFF", 0.96),
         transition: "border-color 160ms ease, box-shadow 160ms ease",
         "& fieldset": {
@@ -134,7 +139,7 @@ export function SignInPage() {
                     display: "grid",
                     gridTemplateColumns: { xs: "1fr", md: "0.96fr 1.04fr" },
                     minHeight: { xs: "auto", md: 680 },
-                    borderRadius: { xs: 4, md: 5 },
+                    borderRadius: loginShellRadius,
                     boxShadow: "0 24px 72px rgba(15, 23, 42, 0.12)"
                 }}
             >
@@ -167,9 +172,22 @@ export function SignInPage() {
                     >
                         <Stack spacing={3}>
                             <Stack spacing={1.25}>
-                                <Typography variant="overline" sx={{ letterSpacing: 3, opacity: 0.82 }}>
-                                    Fund-Me Workplace Contributions
-                                </Typography>
+                                <Stack direction="row" spacing={1.25} alignItems="center">
+                                    <Box
+                                        component="img"
+                                        src="/changa2.svg"
+                                        alt="Changa logo"
+                                        sx={{
+                                            width: 42,
+                                            height: 42,
+                                            objectFit: "contain",
+                                            filter: "drop-shadow(0 10px 24px rgba(15, 23, 42, 0.18))"
+                                        }}
+                                    />
+                                    <Typography variant="overline" sx={{ letterSpacing: 3, opacity: 0.82 }}>
+                                        Fund-Me Workplace Contributions
+                                    </Typography>
+                                </Stack>
                                 <Typography
                                     variant="h3"
                                     sx={{
@@ -205,7 +223,8 @@ export function SignInPage() {
                                             color: "common.white",
                                             borderColor: alpha("#FFFFFF", 0.18),
                                             backgroundColor: alpha("#FFFFFF", 0.1),
-                                            height: 32
+                                            height: 32,
+                                            borderRadius: loginChipRadius
                                         }}
                                     />
                                 ))}
@@ -216,7 +235,7 @@ export function SignInPage() {
                             variant="outlined"
                             sx={{
                                 p: 2.5,
-                                borderRadius: 3.5,
+                                borderRadius: loginInnerRadius,
                                 borderColor: alpha("#FFFFFF", 0.16),
                                 bgcolor: alpha("#FFFFFF", 0.1),
                                 color: "common.white",
@@ -228,7 +247,7 @@ export function SignInPage() {
                                     sx={{
                                         width: 42,
                                         height: 42,
-                                        borderRadius: 2.5,
+                                        borderRadius: loginInnerRadius,
                                         display: "grid",
                                         placeItems: "center",
                                         bgcolor: alpha("#FFFFFF", 0.14),
@@ -262,9 +281,21 @@ export function SignInPage() {
                 >
                     <Stack spacing={2.75} sx={{ width: "100%", maxWidth: 400 }}>
                         <Stack spacing={1.25}>
-                            <Typography variant="overline" color="primary" sx={{ letterSpacing: 2.4 }}>
-                                Workspace access
-                            </Typography>
+                            <Stack direction="row" spacing={1.25} alignItems="center">
+                                <Box
+                                    component="img"
+                                    src="/changa2.svg"
+                                    alt="Changa logo"
+                                    sx={{
+                                        width: 38,
+                                        height: 38,
+                                        objectFit: "contain"
+                                    }}
+                                />
+                                <Typography variant="overline" color="primary" sx={{ letterSpacing: 2.4 }}>
+                                    Workspace access
+                                </Typography>
+                            </Stack>
                             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.8 }}>
                                 Sign in to Fund-Me
                             </Typography>
@@ -273,8 +304,16 @@ export function SignInPage() {
                             </Typography>
                         </Stack>
 
-                        {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
-                        {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+                        {successMessage ? (
+                            <Alert severity="success" sx={{ borderRadius: loginInnerRadius }}>
+                                {successMessage}
+                            </Alert>
+                        ) : null}
+                        {errorMessage ? (
+                            <Alert severity="error" sx={{ borderRadius: loginInnerRadius }}>
+                                {errorMessage}
+                            </Alert>
+                        ) : null}
 
                         <Box
                             component="form"
@@ -386,49 +425,49 @@ export function SignInPage() {
                                     disabled={submitting || !email.trim() || !password}
                                     sx={{
                                         minHeight: 52,
-                                        borderRadius: "12px",
+                                        borderRadius: loginButtonRadius,
                                         boxShadow: "0 14px 28px rgba(47, 91, 255, 0.2)"
                                     }}
                                 >
                                     {submitting ? "Signing in..." : "Sign in"}
                                 </Button>
+
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ textAlign: "center", lineHeight: 1.75, px: 1 }}
+                                >
+                                    By continuing, you agree to the{" "}
+                                    <Box
+                                        component={RouterLink}
+                                        to="/terms-and-conditions"
+                                        sx={{
+                                            display: "inline",
+                                            color: "primary.main",
+                                            textDecoration: "none",
+                                            fontWeight: 700
+                                        }}
+                                    >
+                                        Terms & Conditions
+                                    </Box>
+                                    {" "}and acknowledge the{" "}
+                                    <Box
+                                        component={RouterLink}
+                                        to="/privacy-policy"
+                                        sx={{
+                                            display: "inline",
+                                            color: "primary.main",
+                                            textDecoration: "none",
+                                            fontWeight: 700
+                                        }}
+                                    >
+                                        Privacy Policy
+                                    </Box>
+                                    .
+                                </Typography>
                             </Stack>
                         </Box>
 
-                        <Paper
-                            variant="outlined"
-                            sx={{
-                                p: 2,
-                                borderRadius: 3,
-                                background: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.12 : 0.04)
-                            }}
-                        >
-                            <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                                <Box
-                                    sx={{
-                                        width: 38,
-                                        height: 38,
-                                        display: "grid",
-                                        placeItems: "center",
-                                        borderRadius: 2,
-                                        bgcolor: alpha(brandColors.primary[500], 0.12),
-                                        color: brandColors.primary[900],
-                                        flexShrink: 0
-                                    }}
-                                >
-                                    <WorkspacesRoundedIcon fontSize="small" />
-                                </Box>
-                                <Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                        Clean access model
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>
-                                        Members use self-service access and recovery. Fund Managers and Admin users
-                                        operate from their assigned workspaces after sign-in.
-                                    </Typography>
-                                </Box>
-                            </Stack>
-                        </Paper>
                     </Stack>
                 </Box>
             </Paper>

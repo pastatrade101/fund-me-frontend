@@ -7,6 +7,7 @@ import {
     Alert,
     Box,
     Button,
+    Divider,
     Dialog,
     DialogActions,
     DialogContent,
@@ -20,7 +21,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 
 import type { ContributionPaymentOrderStatus } from "../../types/api";
 import { brandColors } from "../../theme/colors";
-import { formatCurrency, formatDate } from "../../pages/page-format";
+import { formatCurrency, formatDate, formatDateTime } from "../../pages/page-format";
 
 interface ContributionPaymentProgressDialogProps {
     open: boolean;
@@ -78,6 +79,53 @@ function getProgressValue(order: ContributionPaymentOrderStatus | null) {
     }
 
     return 66;
+}
+
+function getProviderSessionSummary(order: ContributionPaymentOrderStatus) {
+    const startedAt = new Date(order.initiated_at);
+    const fallbackWindowMinutes = 5;
+
+    if (Number.isNaN(startedAt.getTime())) {
+        return {
+            durationMinutes: fallbackWindowMinutes,
+            closesAt: null as Date | null,
+            stateLabel: "Session timing unavailable",
+            helperText: "Snippe normally keeps the approval session open for about 5 minutes."
+        };
+    }
+
+    const resolvedClosesAt = order.expires_at ? new Date(order.expires_at) : new Date(startedAt.getTime() + fallbackWindowMinutes * 60 * 1000);
+    const closesAt = Number.isNaN(resolvedClosesAt.getTime())
+        ? new Date(startedAt.getTime() + fallbackWindowMinutes * 60 * 1000)
+        : resolvedClosesAt;
+    const durationMinutes = Math.max(1, Math.round((closesAt.getTime() - startedAt.getTime()) / 60000));
+    const remainingMs = closesAt.getTime() - Date.now();
+
+    if (order.status === "expired" || remainingMs <= 0) {
+        return {
+            durationMinutes,
+            closesAt,
+            stateLabel: "Provider session closed",
+            helperText: `Snippe kept the handset approval prompt open for ${durationMinutes} minutes before the request expired.`
+        };
+    }
+
+    if (order.status === "pending") {
+        const remainingMinutes = Math.max(1, Math.ceil(remainingMs / 60000));
+        return {
+            durationMinutes,
+            closesAt,
+            stateLabel: `${remainingMinutes} min left in session`,
+            helperText: `This payment can remain in progress until the ${durationMinutes}-minute Snippe provider session closes or you approve it on your phone.`
+        };
+    }
+
+    return {
+        durationMinutes,
+        closesAt,
+        stateLabel: "Provider session resolved",
+        helperText: `Snippe opened a ${durationMinutes}-minute approval window for this request.`
+    };
 }
 
 function StepPill({
@@ -184,6 +232,7 @@ export function ContributionPaymentProgressDialog({
     const displayedPlatformFee = Number(order.platform_fee || 0);
     const displayedGatewayFee = Number(order.gateway_fee || 0);
     const displayedTotalToPay = Number(order.total_to_pay || order.gross_amount || order.amount || displayedContributionAmount);
+    const providerSession = getProviderSessionSummary(order);
     const headline = isCompleted
         ? "Contribution completed"
         : isFailed
@@ -219,6 +268,85 @@ export function ContributionPaymentProgressDialog({
                                 ? "The payment is no longer waiting for approval. Review the current order details below."
                                 : "Waiting for approval on your phone. You can close this dialog and check again later from My Contributions."}
                     </Alert>
+
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 2,
+                            borderRadius: 1,
+                            bgcolor: alpha(isWarmDark ? brandColors.warning : brandColors.primary[500], 0.05),
+                            borderColor: alpha(isWarmDark ? brandColors.warning : brandColors.primary[500], 0.18)
+                        }}
+                    >
+                        <Stack spacing={1.5}>
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={1.25}
+                                justifyContent="space-between"
+                                alignItems={{ xs: "flex-start", sm: "center" }}
+                            >
+                                <Stack direction="row" spacing={1.25} alignItems="center">
+                                    <Box
+                                        sx={{
+                                            width: 38,
+                                            height: 38,
+                                            borderRadius: 1,
+                                            display: "grid",
+                                            placeItems: "center",
+                                            bgcolor: alpha(isWarmDark ? brandColors.warning : brandColors.primary[500], 0.12),
+                                            color: isWarmDark ? "#FCD34D" : brandColors.primary[900]
+                                        }}
+                                    >
+                                        <HourglassTopRoundedIcon fontSize="small" />
+                                    </Box>
+                                    <Stack spacing={0.2}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                            Snippe provider session
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {providerSession.helperText}
+                                        </Typography>
+                                    </Stack>
+                                </Stack>
+                                <Box
+                                    sx={{
+                                        px: 1.25,
+                                        py: 0.65,
+                                        borderRadius: 1,
+                                        border: `1px solid ${alpha(isWarmDark ? brandColors.warning : brandColors.primary[500], 0.2)}`,
+                                        bgcolor: alpha(isWarmDark ? brandColors.warning : brandColors.primary[500], 0.08)
+                                    }}
+                                >
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                        {providerSession.durationMinutes} minute window
+                                    </Typography>
+                                </Box>
+                            </Stack>
+
+                            <Divider />
+
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+                                    gap: 1.5
+                                }}
+                            >
+                                <Stack spacing={0.35}>
+                                    <Typography variant="overline" color="text.secondary">Session started</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatDateTime(order.initiated_at)}</Typography>
+                                </Stack>
+                                <Stack spacing={0.35}>
+                                    <Typography variant="overline" color="text.secondary">Session closes</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatDateTime(providerSession.closesAt?.toISOString() || order.expires_at || null)}</Typography>
+                                </Stack>
+                                <Stack spacing={0.35}>
+                                    <Typography variant="overline" color="text.secondary">Session status</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{providerSession.stateLabel}</Typography>
+                                </Stack>
+                            </Box>
+                        </Stack>
+                    </Paper>
 
                     <Box>
                         <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
@@ -325,11 +453,11 @@ export function ContributionPaymentProgressDialog({
                                 </Stack>
                                 <Stack spacing={0.35}>
                                     <Typography variant="overline" color="text.secondary">Order started</Typography>
-                                    <Typography sx={{ fontWeight: 700 }}>{formatDate(order.initiated_at)}</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatDateTime(order.initiated_at)}</Typography>
                                 </Stack>
                                 <Stack spacing={0.35}>
                                     <Typography variant="overline" color="text.secondary">Provider window closes</Typography>
-                                    <Typography sx={{ fontWeight: 700 }}>{formatDate(order.expires_at || null)}</Typography>
+                                    <Typography sx={{ fontWeight: 700 }}>{formatDateTime(order.expires_at || null)}</Typography>
                                 </Stack>
                             </Box>
                         </Stack>
