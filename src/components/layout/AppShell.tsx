@@ -294,8 +294,10 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
     const navigate = useNavigate();
     const { closeMobileSidebar, theme } = useUI();
     const { user, signOut } = useAuth();
-    const navItems = navItemsByRole[primaryRole];
-    const isPortalShell = primaryRole === "member" || primaryRole === "fund_manager";
+    const navItems = primaryRole === "admin"
+        ? adminNavSections.flatMap((section) => section.items)
+        : navItemsByRole[primaryRole];
+    const isPortalShell = primaryRole === "member" || primaryRole === "fund_manager" || primaryRole === "admin";
     const isWarmDark = theme === "dark";
     const accentColor = isWarmDark ? "#FBBF24" : brandColors.primary[900];
     const accentColorSoft = isWarmDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[100], 0.56);
@@ -307,7 +309,9 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
     const displayName = member?.full_name || staff?.full_name || user?.email?.split("@")[0] || "User";
     const summarySubtitle = primaryRole === "member"
         ? (member?.department || "Assigned department")
-        : "Operations workspace";
+        : primaryRole === "admin"
+            ? "Governance workspace"
+            : "Operations workspace";
     const statusLabel = primaryRole === "member"
         ? (
             member?.status === "active"
@@ -316,12 +320,24 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                     ? "Pending signup"
                     : "Inactive"
         )
-        : (staff?.status === "active" ? "Operations live" : "Inactive");
-    const primaryChipLabel = primaryRole === "member" ? "Member" : "Fund Manager";
-    const footerTitle = primaryRole === "member" ? "Secure member session" : "Operational command center";
+        : primaryRole === "admin"
+            ? (staff?.status === "active" ? "Governance live" : "Inactive")
+            : (staff?.status === "active" ? "Operations live" : "Inactive");
+    const primaryChipLabel = primaryRole === "member"
+        ? "Member"
+        : primaryRole === "admin"
+            ? "Admin"
+            : "Fund Manager";
+    const footerTitle = primaryRole === "member"
+        ? "Secure member session"
+        : primaryRole === "admin"
+            ? "Governance command center"
+            : "Operational command center";
     const footerDescription = primaryRole === "member"
         ? "Real-time obligations, payment tracking, and self-service history in one place."
-        : "Policies, events, collections, and reports coordinated from one operational shell.";
+        : primaryRole === "admin"
+            ? "System health, financial integrity, audit visibility, and staff access oversight from one shell."
+            : "Policies, events, collections, and reports coordinated from one operational shell.";
 
     const handleNavigate = (to: string) => {
         closeMobileSidebar();
@@ -747,7 +763,7 @@ export function AppShell() {
     const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
     const [adminGovernanceStatus, setAdminGovernanceStatus] = useState<GovernanceOverallStatus | null>(null);
     const primaryRole = getPrimaryRole(user);
-    const isPortalShell = primaryRole === "member" || primaryRole === "fund_manager";
+    const isPortalShell = primaryRole === "member" || primaryRole === "fund_manager" || primaryRole === "admin";
     const isWarmDark = theme === "dark";
     const shellAccent = isWarmDark ? "#FBBF24" : brandColors.primary[900];
     const shellAccentSoft = isWarmDark ? alpha(brandColors.warning, 0.14) : alpha(brandColors.primary[500], 0.12);
@@ -875,7 +891,13 @@ export function AppShell() {
 
                         <OutlinedInput
                             size="small"
-                            placeholder={primaryRole === "member" ? "Search member workspace" : "Search operations workspace"}
+                            placeholder={
+                                primaryRole === "member"
+                                    ? "Search member workspace"
+                                    : primaryRole === "admin"
+                                        ? "Search governance workspace"
+                                        : "Search operations workspace"
+                            }
                             startAdornment={
                                 <InputAdornment position="start">
                                     <SearchRoundedIcon fontSize="small" sx={{ color: isWarmDark ? shellAccentText : "inherit" }} />
@@ -894,6 +916,35 @@ export function AppShell() {
                                 }
                             }}
                         />
+
+                        {primaryRole === "admin" ? (
+                            <Chip
+                                label={`System Status: ${
+                                    adminGovernanceStatus
+                                        ? `● ${formatGovernanceStatusLabel(adminGovernanceStatus)}`
+                                        : "● Unknown"
+                                }`}
+                                sx={{
+                                    display: { xs: "none", lg: "inline-flex" },
+                                    borderRadius: 999,
+                                    fontWeight: 700,
+                                    color: adminGovernanceStatus === "critical"
+                                        ? "#DC2626"
+                                        : adminGovernanceStatus === "degraded"
+                                            ? "#D97706"
+                                            : adminGovernanceStatus === "healthy"
+                                                ? "#059669"
+                                                : "text.secondary",
+                                    bgcolor: adminGovernanceStatus === "critical"
+                                        ? alpha("#DC2626", 0.08)
+                                        : adminGovernanceStatus === "degraded"
+                                            ? alpha("#D97706", 0.08)
+                                            : adminGovernanceStatus === "healthy"
+                                                ? alpha("#059669", 0.08)
+                                                : alpha(shellAccent, 0.08)
+                                }}
+                            />
+                        ) : null}
 
                         <IconButton
                             sx={{

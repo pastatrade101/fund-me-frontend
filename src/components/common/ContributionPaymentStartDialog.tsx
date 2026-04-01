@@ -17,8 +17,11 @@ import {
     TextField,
     Typography
 } from "@mui/material";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { alpha, useTheme } from "@mui/material/styles";
 
+import { GlassCard } from "../ui/GlassCard";
+import { GradientButton } from "../ui/GradientButton";
 import { formatCurrency } from "../../pages/page-format";
 
 interface ContributionPaymentStartDialogProps {
@@ -59,7 +62,9 @@ export function ContributionPaymentStartDialog({
     submitting = false
 }: ContributionPaymentStartDialogProps) {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
     const blockedByMinimumAmount = !minimumAmountMet;
+    const feesTotal = platformFee + gatewayFee;
     const submitLabel = submitting
         ? "Sending request..."
         : blockedByMinimumAmount
@@ -67,50 +72,92 @@ export function ContributionPaymentStartDialog({
             : "Send payment request";
 
     return (
-        <Dialog open={open} onClose={() => !submitting && !loading && onClose()} fullWidth maxWidth="sm">
-            <DialogTitle sx={{ pb: 1.25 }}>
+        <Dialog
+            open={open}
+            onClose={() => !submitting && !loading && onClose()}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+                sx: {
+                    mx: { xs: 1.5, sm: 2 },
+                    my: { xs: 1.5, sm: 3 },
+                    width: { xs: "calc(100% - 24px)", sm: "100%" },
+                    borderRadius: { xs: 3, sm: 4 },
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                    background: `linear-gradient(180deg, ${alpha("#FFFFFF", 0.96)} 0%, ${alpha("#F6F8FF", 0.98)} 100%)`,
+                    boxShadow: theme.fundMe.shadows.glass,
+                    overflow: "hidden"
+                }
+            }}
+        >
+            <DialogTitle sx={{ pb: isMobile ? 1 : 1.25, px: { xs: 2, sm: 3 }, pt: { xs: 2, sm: 2.5 } }}>
                 <Stack spacing={1.5}>
-                    <Stack direction="row" spacing={1.25} alignItems="center">
+                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
                         <Box
                             sx={{
-                                width: 46,
-                                height: 46,
+                                width: isMobile ? 40 : 46,
+                                height: isMobile ? 40 : 46,
                                 borderRadius: "4px",
                                 display: "grid",
                                 placeItems: "center",
-                                bgcolor: alpha(theme.palette.primary.main, 0.12),
-                                color: "primary.main"
+                                background: theme.fundMe.gradients.button,
+                                color: "#FFFFFF",
+                                boxShadow: theme.fundMe.shadows.soft,
+                                flexShrink: 0,
+                                mt: isMobile ? 0.5 : 0
                             }}
                         >
                             <PaymentsRoundedIcon />
                         </Box>
-                        <Stack spacing={0.25}>
-                            <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                        <Stack spacing={isMobile ? 0.6 : 0.25} sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography
+                                variant={isMobile ? "h6" : "h5"}
+                                sx={{
+                                    fontWeight: 800,
+                                    lineHeight: isMobile ? 1.1 : 1.15,
+                                    mt: isMobile ? -0.1 : 0
+                                }}
+                            >
                                 Pay Contribution
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Review the full mobile money charge before you approve the request on your phone.
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ lineHeight: isMobile ? 1.35 : 1.5 }}
+                            >
+                                {isMobile
+                                    ? "Send the approval request to your phone."
+                                    : "Review the full mobile money charge before you approve the request on your phone."}
                             </Typography>
                         </Stack>
                     </Stack>
-                    <Stack direction="row" spacing={1} flexWrap="wrap">
-                        <Chip
-                            size="small"
-                            icon={<VerifiedUserRoundedIcon />}
-                            label="Secure checkout"
-                            color="primary"
-                            variant="outlined"
-                        />
-                        <Chip
-                            size="small"
-                            icon={<PhoneIphoneRoundedIcon />}
-                            label="Snippe mobile money"
-                            variant="outlined"
-                        />
-                    </Stack>
+                    {!isMobile ? (
+                        <Stack direction="row" spacing={1} flexWrap="wrap">
+                            <Chip
+                                size="small"
+                                icon={<VerifiedUserRoundedIcon />}
+                                label="Secure checkout"
+                                color="primary"
+                                variant="outlined"
+                            />
+                            <Chip
+                                size="small"
+                                icon={<PhoneIphoneRoundedIcon />}
+                                label="Snippe mobile money"
+                                variant="outlined"
+                            />
+                        </Stack>
+                    ) : null}
                 </Stack>
             </DialogTitle>
-            <DialogContent dividers>
+            <DialogContent
+                dividers={!isMobile}
+                sx={{
+                    px: { xs: 2, sm: 3 },
+                    pt: { xs: 0.5, sm: 2 },
+                    pb: { xs: 1.5, sm: 2 }
+                }}
+            >
                 {loading ? (
                     <Stack spacing={2} sx={{ pt: 0.5 }}>
                         <Alert severity="info">
@@ -119,160 +166,269 @@ export function ContributionPaymentStartDialog({
                         <LinearProgress />
                     </Stack>
                 ) : (
-                    <Stack spacing={2} sx={{ pt: 0.5 }}>
-                        <TextField
-                            label="Mobile number"
-                            value={phone}
-                            onChange={(event) => onPhoneChange(event.target.value)}
-                            helperText="Use the mobile money number that should receive the approval prompt."
-                            fullWidth
-                            variant="outlined"
-                        />
-                        <Paper
-                            variant="outlined"
-                            sx={{
-                                p: 2,
-                                borderRadius: "4px",
-                                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.background.paper, 0.96)})`,
-                                borderColor: alpha(theme.palette.primary.main, 0.16)
-                            }}
-                        >
-                            <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                                <Box
-                                    sx={{
-                                        width: 42,
-                                        height: 42,
-                                        borderRadius: "4px",
-                                        display: "grid",
-                                        placeItems: "center",
-                                        bgcolor: alpha(theme.palette.primary.main, 0.12),
-                                        color: "primary.main",
-                                        flexShrink: 0
-                                    }}
+                    <Stack spacing={isMobile ? 1.5 : 2} sx={{ pt: isMobile ? 0 : 0.5 }}>
+                        <Stack spacing={0.65} sx={{ mt: isMobile ? 1.25 : 0 }}>
+                            {isMobile ? (
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 700, letterSpacing: "0.04em" }}
                                 >
-                                    <PhoneIphoneRoundedIcon fontSize="small" />
-                                </Box>
-                                <Stack spacing={0.75}>
-                                    <Typography variant="overline" color="text.secondary">
-                                        Payment method
-                                    </Typography>
-                                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                                        Mobile Money
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Member self-service payments currently use Snippe mobile money.
-                                    </Typography>
-                                </Stack>
-                            </Stack>
-                        </Paper>
-                        <Paper
-                            variant="outlined"
-                            sx={{
-                                p: 2,
-                                borderRadius: "4px",
-                                background: `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.035)}, ${theme.palette.background.paper})`
-                            }}
-                        >
-                            <Stack spacing={1.6}>
-                                <Stack direction="row" spacing={1.25} alignItems="center">
+                                    Mobile number
+                                </Typography>
+                            ) : null}
+                            <TextField
+                                label={isMobile ? undefined : "Mobile number"}
+                                value={phone}
+                                onChange={(event) => onPhoneChange(event.target.value)}
+                                helperText={isMobile ? undefined : "Use the mobile money number that should receive the approval prompt."}
+                                fullWidth
+                                variant="outlined"
+                                size={isMobile ? "small" : "medium"}
+                            />
+                        </Stack>
+                        {!isMobile ? (
+                            <Paper
+                                variant="outlined"
+                                sx={{
+                                    p: 2,
+                                    borderRadius: "4px",
+                                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.background.paper, 0.96)})`,
+                                    borderColor: alpha(theme.palette.primary.main, 0.16)
+                                }}
+                            >
+                                <Stack direction="row" spacing={1.5} alignItems="flex-start">
                                     <Box
                                         sx={{
-                                            width: 40,
-                                            height: 40,
+                                            width: 42,
+                                            height: 42,
                                             borderRadius: "4px",
                                             display: "grid",
                                             placeItems: "center",
                                             bgcolor: alpha(theme.palette.primary.main, 0.12),
-                                            color: "primary.main"
+                                            color: "primary.main",
+                                            flexShrink: 0
                                         }}
                                     >
-                                        <PaymentsRoundedIcon fontSize="small" />
+                                        <PhoneIphoneRoundedIcon fontSize="small" />
                                     </Box>
-                                    <Stack spacing={0.2}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                            Payment summary
+                                    <Stack spacing={0.75}>
+                                        <Typography variant="overline" color="text.secondary">
+                                            Payment method
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                            Mobile Money
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            Clear breakdown of what you pay and what the event receives.
+                                            Member self-service payments currently use Snippe mobile money.
                                         </Typography>
                                     </Stack>
                                 </Stack>
-
-                                <Stack spacing={1}>
-                                    <SummaryRow label="Contribution amount" value={formatCurrency(contributionAmount)} />
-                                    <SummaryRow
-                                        label={platformFeeRate !== null ? `Platform fee (${platformFeeRate}%)` : "Platform fee"}
-                                        value={formatCurrency(platformFee)}
-                                    />
-                                    <SummaryRow
-                                        label={gatewayFeeRate !== null && gatewayFlatFee !== null
-                                            ? `Mobile money fee (${gatewayFeeRate}% + ${formatCurrency(gatewayFlatFee)})`
-                                            : "Mobile money fee"}
-                                        value={formatCurrency(gatewayFee)}
-                                    />
-                                </Stack>
-
-                                <Divider />
-
-                                <SummaryRow
-                                    label="Total to pay"
-                                    value={formatCurrency(totalToPay)}
-                                    emphasize
-                                />
-
-                                <Paper
-                                    variant="outlined"
-                                    sx={{
-                                        px: 1.5,
-                                        py: 1.25,
-                                        borderRadius: "4px",
-                                        borderColor: alpha(theme.palette.success.main, 0.22),
-                                        bgcolor: alpha(theme.palette.success.main, 0.08)
-                                    }}
-                                >
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                                        <Box>
-                                            <Typography variant="body2" color="text.secondary">
-                                                Event receives
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                The contribution amount credited into the event fund
-                                            </Typography>
+                            </Paper>
+                        ) : null}
+                        <GlassCard
+                            variant="outlined"
+                            tint={isMobile ? "accent" : "default"}
+                            sx={{
+                                p: isMobile ? 2 : 2.1,
+                                borderRadius: isMobile ? theme.fundMe.radius.lg : "4px"
+                            }}
+                        >
+                            {isMobile ? (
+                                <Stack spacing={1.5} sx={{ position: "relative", zIndex: 1 }}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                                        <Typography
+                                            variant="overline"
+                                            color="text.secondary"
+                                            sx={{ letterSpacing: "0.12em", fontWeight: 700 }}
+                                        >
+                                            Payment total
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                px: 1,
+                                                py: 0.45,
+                                                borderRadius: "999px",
+                                                bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                                color: "primary.main"
+                                            }}
+                                        >
+                                            <Stack direction="row" spacing={0.5} alignItems="center">
+                                                <VerifiedUserRoundedIcon sx={{ fontSize: 14 }} />
+                                                <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                                                    Secure
+                                                </Typography>
+                                            </Stack>
                                         </Box>
-                                        <Typography variant="h6" color="success.main" sx={{ fontWeight: 800 }}>
-                                            {formatCurrency(contributionAmount)}
-                                        </Typography>
                                     </Stack>
-                                </Paper>
 
-                                {blockedByMinimumAmount && minimumAmountMessage ? (
-                                    <Typography variant="body2" sx={{ color: "warning.main", fontWeight: 700 }}>
-                                        {minimumAmountMessage}
+                                    <Typography variant="h3" sx={{ fontWeight: 900, lineHeight: 1, letterSpacing: "-0.03em" }}>
+                                        {formatCurrency(totalToPay)}
                                     </Typography>
-                                ) : null}
-                            </Stack>
-                        </Paper>
+
+                                    <Box
+                                        sx={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                                            gap: 1
+                                        }}
+                                    >
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                px: 1.25,
+                                                py: 1,
+                                                borderRadius: theme.fundMe.radius.md,
+                                                bgcolor: alpha("#FFFFFF", 0.7),
+                                                borderColor: alpha(theme.palette.primary.main, 0.12)
+                                            }}
+                                        >
+                                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                                Event fund
+                                            </Typography>
+                                            <Typography sx={{ fontWeight: 800, mt: 0.35 }}>
+                                                {formatCurrency(contributionAmount)}
+                                            </Typography>
+                                        </Paper>
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                px: 1.25,
+                                                py: 1,
+                                                borderRadius: theme.fundMe.radius.md,
+                                                bgcolor: alpha("#FFFFFF", 0.7),
+                                                borderColor: alpha(theme.palette.primary.main, 0.12)
+                                            }}
+                                        >
+                                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                                Fees
+                                            </Typography>
+                                            <Typography sx={{ fontWeight: 800, mt: 0.35 }}>
+                                                {formatCurrency(feesTotal)}
+                                            </Typography>
+                                        </Paper>
+                                    </Box>
+
+                                    <Typography variant="body2" color="text.secondary">
+                                        Approve this payment on your phone to complete the contribution.
+                                    </Typography>
+                                </Stack>
+                            ) : (
+                                <Stack spacing={1.6}>
+                                    <Stack direction="row" spacing={1.25} alignItems="center">
+                                        <Box
+                                            sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: "4px",
+                                                display: "grid",
+                                                placeItems: "center",
+                                                bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                                color: "primary.main"
+                                            }}
+                                        >
+                                            <PaymentsRoundedIcon fontSize="small" />
+                                        </Box>
+                                        <Stack spacing={0.2}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                                Payment summary
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Clear breakdown of what you pay and what the event receives.
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+
+                                    <Stack spacing={1}>
+                                        <SummaryRow label="Contribution amount" value={formatCurrency(contributionAmount)} />
+                                        <SummaryRow
+                                            label={platformFeeRate !== null ? `Platform fee (${platformFeeRate}%)` : "Platform fee"}
+                                            value={formatCurrency(platformFee)}
+                                        />
+                                        <SummaryRow
+                                            label={gatewayFeeRate !== null && gatewayFlatFee !== null
+                                                ? `Mobile money fee (${gatewayFeeRate}% + ${formatCurrency(gatewayFlatFee)})`
+                                                : "Mobile money fee"}
+                                            value={formatCurrency(gatewayFee)}
+                                        />
+                                    </Stack>
+
+                                    <Divider />
+
+                                    <SummaryRow
+                                        label="Total to pay"
+                                        value={formatCurrency(totalToPay)}
+                                        emphasize
+                                    />
+
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            px: 1.5,
+                                            py: 1.25,
+                                            borderRadius: "4px",
+                                            borderColor: alpha(theme.palette.success.main, 0.22),
+                                            bgcolor: alpha(theme.palette.success.main, 0.08)
+                                        }}
+                                    >
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                                            <Box>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Event receives
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    The contribution amount credited into the event fund
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="h6" color="success.main" sx={{ fontWeight: 800 }}>
+                                                {formatCurrency(contributionAmount)}
+                                            </Typography>
+                                        </Stack>
+                                    </Paper>
+                                </Stack>
+                            )}
+                        </GlassCard>
+                        {blockedByMinimumAmount && minimumAmountMessage ? (
+                            <Alert severity="warning" sx={{ py: 0.25 }}>
+                                {minimumAmountMessage}
+                            </Alert>
+                        ) : null}
                     </Stack>
                 )}
             </DialogContent>
-            <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between", gap: 1.5 }}>
-                {blockedByMinimumAmount && minimumAmountMessage ? (
-                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
-                        Mobile money payment is unavailable for this amount.
-                    </Typography>
-                ) : (
-                    <Box sx={{ flex: 1 }} />
-                )}
-                <Button onClick={onClose} disabled={submitting || loading}>
+            <DialogActions
+                sx={{
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 2, sm: 2 },
+                    justifyContent: isMobile ? "stretch" : "space-between",
+                    alignItems: isMobile ? "stretch" : "center",
+                    gap: 1.25,
+                    flexDirection: { xs: "column-reverse", sm: "row" }
+                }}
+            >
+                {!isMobile ? (
+                    blockedByMinimumAmount && minimumAmountMessage ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                            Mobile money payment is unavailable for this amount.
+                        </Typography>
+                    ) : (
+                        <Box sx={{ flex: 1 }} />
+                    )
+                ) : null}
+                <Button onClick={onClose} disabled={submitting || loading} fullWidth={isMobile}>
                     Cancel
                 </Button>
-                <Button
-                    variant="contained"
+                <GradientButton
                     disabled={submitting || loading || !phone.trim() || !minimumAmountMet}
                     onClick={onSubmit}
+                    fullWidth={isMobile}
+                    sx={{
+                        minHeight: isMobile ? 50 : 44,
+                        fontWeight: 800
+                    }}
                 >
                     {submitLabel}
-                </Button>
+                </GradientButton>
             </DialogActions>
         </Dialog>
     );

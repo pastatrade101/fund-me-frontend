@@ -5,7 +5,7 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import EventRoundedIcon from "@mui/icons-material/EventRounded";
 import LaunchRoundedIcon from "@mui/icons-material/LaunchRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
-import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, LinearProgress, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -307,6 +307,51 @@ export function EventsPage() {
     const canDeleteEvent = (event: ContributionEventSummary) =>
         isFundManager && Boolean(event.can_delete);
 
+    const renderMemberStatusChip = (row: ContributionLedgerRow | undefined) => (
+        <Chip
+            size="small"
+            label={row?.status ? row.status.replace(/_/g, " ") : "pending"}
+            color={row?.status === "paid" ? "success" : row?.status === "partial" ? "warning" : "default"}
+            variant={row?.status === "paid" ? "filled" : "outlined"}
+        />
+    );
+
+    const renderMemberActionButton = (
+        event: ContributionEventSummary,
+        row: ContributionLedgerRow | undefined,
+        hasCompleted: boolean,
+        isOpeningContribution: boolean,
+        fullWidth = false
+    ) => {
+        if (!row) {
+            return (
+                <Button size={fullWidth ? "medium" : "small"} variant="outlined" disabled fullWidth={fullWidth}>
+                    Contribution unavailable
+                </Button>
+            );
+        }
+
+        return (
+            <Button
+                size={fullWidth ? "medium" : "small"}
+                variant={hasCompleted ? "outlined" : "contained"}
+                startIcon={isOpeningContribution ? <AutorenewRoundedIcon sx={{ animation: "spin 1s linear infinite", "@keyframes spin": { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } } }} /> : <PaymentsRoundedIcon />}
+                disabled={isOpeningContribution}
+                fullWidth={fullWidth}
+                onClick={() => {
+                    if (hasCompleted) {
+                        void handleOpenReceipt(row);
+                        return;
+                    }
+
+                    void handleOpenContribution(event, row);
+                }}
+            >
+                {isOpeningContribution ? "Preparing..." : hasCompleted ? "View Details" : "Contribute"}
+            </Button>
+        );
+    };
+
     if (loading && !events.length && (isFundManager || !memberRows.length)) {
         return <DataPageSkeleton statCards={0} tableColumns={isFundManager ? 9 : 6} tableRows={6} />;
     }
@@ -423,87 +468,131 @@ export function EventsPage() {
                 </Paper>
             ) : (
                 <>
-                    <Paper sx={{ overflow: "hidden" }}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Event</TableCell>
-                                    <TableCell>Type</TableCell>
-                                    <TableCell>Deadline</TableCell>
-                                    <TableCell>Contribution Amount</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell align="right">Action</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
+                    {!events.length ? (
+                        <Paper sx={{ p: 3 }}>
+                            <Stack spacing={1} alignItems="center" sx={{ py: 2 }}>
+                                <EventRoundedIcon color="disabled" />
+                                <Typography sx={{ fontWeight: 700 }}>No contribution events available.</Typography>
+                                <Typography variant="body2" color="text.secondary" textAlign="center">
+                                    When a fund manager opens an event that applies to you, it will appear here.
+                                </Typography>
+                            </Stack>
+                        </Paper>
+                    ) : (
+                        <>
+                            <Stack spacing={1.5} sx={{ display: { xs: "flex", md: "none" } }}>
                                 {events.map((event) => {
                                     const row = memberRowsByEventId.get(event.event_id);
                                     const hasCompleted = row?.status === "paid" || row?.status === "waived";
                                     const isOpeningContribution = openingContributionEventId === event.event_id;
-                                    const buttonLabel = hasCompleted ? "View Details" : "Contribute";
+                                    const outstandingAmount = Math.max(Number(row?.expected_amount || 0) - Number(row?.amount_paid || 0), 0);
 
                                     return (
-                                        <TableRow key={event.event_id} hover>
-                                            <TableCell>
-                                                <Stack spacing={0.4}>
-                                                    <Typography sx={{ fontWeight: 700 }}>{event.title}</Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {formatCurrency(event.collected_total)} collected of {formatCurrency(event.expected_total)}
-                                                    </Typography>
+                                        <Paper
+                                            key={event.event_id}
+                                            variant="outlined"
+                                            sx={{
+                                                p: 2,
+                                                borderRadius: 3,
+                                                background: "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,248,255,0.98))"
+                                            }}
+                                        >
+                                            <Stack spacing={1.5}>
+                                                <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="flex-start">
+                                                    <Stack spacing={0.45} sx={{ minWidth: 0, flex: 1 }}>
+                                                        <Typography sx={{ fontWeight: 700 }}>{event.title}</Typography>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {formatCurrency(event.collected_total)} collected of {formatCurrency(event.expected_total)}
+                                                        </Typography>
+                                                    </Stack>
+                                                    {renderMemberStatusChip(row)}
                                                 </Stack>
-                                            </TableCell>
-                                            <TableCell>{getEventTypeLabel(event.event_type)}</TableCell>
-                                            <TableCell>{formatDate(event.deadline)}</TableCell>
-                                            <TableCell>{formatCurrency(row?.expected_amount || 0)}</TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    size="small"
-                                                    label={row?.status ? row.status.replace(/_/g, " ") : "pending"}
-                                                    color={row?.status === "paid" ? "success" : row?.status === "partial" ? "warning" : "default"}
-                                                    variant={row?.status === "paid" ? "filled" : "outlined"}
-                                                />
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <Button
-                                                    size="small"
-                                                    variant={hasCompleted ? "outlined" : "contained"}
-                                                    startIcon={isOpeningContribution ? <AutorenewRoundedIcon sx={{ animation: "spin 1s linear infinite", "@keyframes spin": { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } } }} /> : <PaymentsRoundedIcon />}
-                                                    disabled={isOpeningContribution}
-                                                    onClick={() => {
-                                                    if (!row) {
-                                                        return;
-                                                    }
 
-                                                    if (hasCompleted) {
-                                                        void handleOpenReceipt(row);
-                                                        return;
-                                                    }
-
-                                                    void handleOpenContribution(event, row);
+                                                <Box
+                                                    sx={{
+                                                        display: "grid",
+                                                        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                                                        gap: 1.25
                                                     }}
                                                 >
-                                                    {isOpeningContribution ? "Preparing..." : buttonLabel}
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
+                                                    <Stack spacing={0.35}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                                            Type
+                                                        </Typography>
+                                                        <Typography variant="body2">{getEventTypeLabel(event.event_type)}</Typography>
+                                                    </Stack>
+                                                    <Stack spacing={0.35}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                                            Deadline
+                                                        </Typography>
+                                                        <Typography variant="body2">{formatDate(event.deadline)}</Typography>
+                                                    </Stack>
+                                                    <Stack spacing={0.35}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                                            Your contribution
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                            {formatCurrency(row?.expected_amount || 0)}
+                                                        </Typography>
+                                                    </Stack>
+                                                    <Stack spacing={0.35}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                                            Remaining
+                                                        </Typography>
+                                                        <Typography variant="body2">{formatCurrency(outstandingAmount)}</Typography>
+                                                    </Stack>
+                                                </Box>
+
+                                                {renderMemberActionButton(event, row, hasCompleted, isOpeningContribution, true)}
+                                            </Stack>
+                                        </Paper>
                                     );
                                 })}
-                                {!events.length ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6}>
-                                            <Stack spacing={1} alignItems="center" sx={{ py: 5 }}>
-                                                <EventRoundedIcon color="disabled" />
-                                                <Typography sx={{ fontWeight: 700 }}>No contribution events available.</Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    When a fund manager opens an event that applies to you, it will appear here.
-                                                </Typography>
-                                            </Stack>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : null}
-                            </TableBody>
-                        </Table>
-                    </Paper>
+                            </Stack>
+
+                            <Paper sx={{ overflow: "hidden", display: { xs: "none", md: "block" } }}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Event</TableCell>
+                                            <TableCell>Type</TableCell>
+                                            <TableCell>Deadline</TableCell>
+                                            <TableCell>Contribution Amount</TableCell>
+                                            <TableCell>Status</TableCell>
+                                            <TableCell align="right">Action</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {events.map((event) => {
+                                            const row = memberRowsByEventId.get(event.event_id);
+                                            const hasCompleted = row?.status === "paid" || row?.status === "waived";
+                                            const isOpeningContribution = openingContributionEventId === event.event_id;
+
+                                            return (
+                                                <TableRow key={event.event_id} hover>
+                                                    <TableCell>
+                                                        <Stack spacing={0.4}>
+                                                            <Typography sx={{ fontWeight: 700 }}>{event.title}</Typography>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                {formatCurrency(event.collected_total)} collected of {formatCurrency(event.expected_total)}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                    <TableCell>{getEventTypeLabel(event.event_type)}</TableCell>
+                                                    <TableCell>{formatDate(event.deadline)}</TableCell>
+                                                    <TableCell>{formatCurrency(row?.expected_amount || 0)}</TableCell>
+                                                    <TableCell>{renderMemberStatusChip(row)}</TableCell>
+                                                    <TableCell align="right">
+                                                        {renderMemberActionButton(event, row, hasCompleted, isOpeningContribution)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </Paper>
+                        </>
+                    )}
 
                     <ContributionPaymentStartDialog
                         open={payDialogOpen}

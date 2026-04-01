@@ -100,6 +100,51 @@ function getAlertTone(themeMode: "light" | "dark", severity: GovernanceAlert["se
     };
 }
 
+function parseLatencyValue(value: string) {
+    const match = String(value).match(/(\d+(?:\.\d+)?)\s*ms/i);
+
+    if (!match) {
+        return null;
+    }
+
+    const latency = Number(match[1]);
+    return Number.isFinite(latency) ? latency : null;
+}
+
+function getHealthBenchmark(item: GovernanceHealthItem) {
+    if (item.key === "database") {
+        return "Target under 180ms";
+    }
+
+    if (item.key === "payments") {
+        return "Gateway connectivity";
+    }
+
+    if (item.key === "queue") {
+        return "Worker processing mode";
+    }
+
+    if (item.key === "uptime") {
+        return "Service runtime";
+    }
+
+    return "Availability signal";
+}
+
+function getHealthMeterValue(item: GovernanceHealthItem) {
+    if (item.key !== "database") {
+        return null;
+    }
+
+    const latency = parseLatencyValue(item.value);
+
+    if (latency === null) {
+        return null;
+    }
+
+    return Math.max(0, Math.min((latency / 400) * 100, 100));
+}
+
 function GovernanceTrendChart({ data }: { data: GovernanceTrendPoint[] }) {
     const theme = useTheme();
     const width = 920;
@@ -232,40 +277,109 @@ function SystemHealthPanel({ items }: { items: GovernanceHealthItem[] }) {
                 <Grid container spacing={1.5}>
                     {items.map((item) => {
                         const tone = getHealthTone(theme.palette.mode, item.status);
+                        const meterValue = getHealthMeterValue(item);
+                        const statusLabel = item.status === "healthy" ? "Healthy" : item.status === "warning" ? "Warning" : "Critical";
 
                         return (
                             <Grid key={item.key} size={{ xs: 12, md: 6, xl: 4 }}>
                                 <Paper
                                     variant="outlined"
                                     sx={{
+                                        position: "relative",
+                                        overflow: "hidden",
                                         height: "100%",
-                                        p: 1.5,
-                                        borderRadius: 2.5,
+                                        p: 1.65,
+                                        borderRadius: 3,
                                         borderColor: tone.border,
-                                        bgcolor: tone.background
+                                        bgcolor: theme.palette.mode === "dark"
+                                            ? `linear-gradient(180deg, ${alpha("#FFFFFF", 0.02)} 0%, ${tone.background} 100%)`
+                                            : `linear-gradient(180deg, ${alpha("#FFFFFF", 0.9)} 0%, ${tone.background} 100%)`,
+                                        "&::before": {
+                                            content: "\"\"",
+                                            position: "absolute",
+                                            inset: "0 0 auto 0",
+                                            height: 4,
+                                            background: `linear-gradient(90deg, ${tone.text} 0%, ${alpha(tone.text, 0.12)} 100%)`
+                                        }
                                     }}
                                 >
-                                    <Stack spacing={1.1}>
+                                    <Stack spacing={1.35} sx={{ height: "100%", position: "relative", zIndex: 1 }}>
                                         <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="center">
-                                            <Typography variant="overline" color="text.secondary">
+                                            <Typography
+                                                variant="overline"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                    letterSpacing: 1.6,
+                                                    fontWeight: 700
+                                                }}
+                                            >
                                                 {item.label}
                                             </Typography>
                                             <Chip
                                                 size="small"
-                                                label={item.status === "healthy" ? "Healthy" : item.status === "warning" ? "Warning" : "Critical"}
+                                                label={statusLabel}
+                                                variant="outlined"
                                                 sx={{
-                                                    borderRadius: 1.5,
+                                                    borderRadius: 999,
+                                                    borderColor: alpha(tone.text, theme.palette.mode === "dark" ? 0.35 : 0.16),
                                                     color: tone.text,
-                                                    bgcolor: alpha(tone.text, theme.palette.mode === "dark" ? 0.16 : 0.08)
+                                                    bgcolor: alpha("#FFFFFF", theme.palette.mode === "dark" ? 0.04 : 0.55),
+                                                    fontWeight: 700
                                                 }}
                                             />
                                         </Stack>
-                                        <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: -0.6 }}>
-                                            {item.value}
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary">
+
+                                        <Stack spacing={0.35}>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: 1.4
+                                                }}
+                                            >
+                                                Observed now
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontSize: { xs: "2.25rem", md: "2.5rem" },
+                                                    lineHeight: 1,
+                                                    fontWeight: 800,
+                                                    letterSpacing: -1.4,
+                                                    fontVariantNumeric: "tabular-nums"
+                                                }}
+                                            >
+                                                {item.value}
+                                            </Typography>
+                                        </Stack>
+
+                                        <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minHeight: 56 }}>
                                             {item.detail}
                                         </Typography>
+
+                                        <Stack spacing={0.7}>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={meterValue ?? 100}
+                                                sx={{
+                                                    height: 7,
+                                                    borderRadius: 999,
+                                                    bgcolor: alpha(tone.text, theme.palette.mode === "dark" ? 0.14 : 0.08),
+                                                    "& .MuiLinearProgress-bar": {
+                                                        borderRadius: 999,
+                                                        backgroundColor: tone.text
+                                                    }
+                                                }}
+                                            />
+                                            <Stack direction="row" justifyContent="space-between" spacing={1} useFlexGap flexWrap="wrap">
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {getHealthBenchmark(item)}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: tone.text, fontWeight: 700 }}>
+                                                    {item.key === "database" && meterValue !== null ? "Critical above 400ms" : statusLabel}
+                                                </Typography>
+                                            </Stack>
+                                        </Stack>
                                     </Stack>
                                 </Paper>
                             </Grid>
