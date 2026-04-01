@@ -21,6 +21,7 @@ import { Link as RouterLink } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import { getPrimaryRole, hasRole } from "../auth/roles";
+import { AdminGovernanceDashboard } from "../components/admin/AdminGovernanceDashboard";
 import { DataPageSkeleton } from "../components/common/DataPageSkeleton";
 import { PageHero } from "../components/common/PageHero";
 import { StatCard } from "../components/common/StatCard";
@@ -31,116 +32,15 @@ import { api, getApiErrorMessage } from "../lib/api";
 import { endpoints } from "../lib/endpoints";
 import { getEventTypeLabel } from "../utils/policy-config";
 import type {
-    AuditLogSummary,
     ContributionEventSummary,
     ContributionLedgerRow,
     DashboardSummary,
-    PlatformFeeSettings,
-    StaffSummary
+    PlatformFeeSettings
 } from "../types/api";
 import { formatCurrency, formatDate } from "./page-format";
 
 function AdminDashboardView() {
-    const [staffSummary, setStaffSummary] = useState<StaffSummary | null>(null);
-    const [auditSummary, setAuditSummary] = useState<AuditLogSummary | null>(null);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        setLoading(true);
-        Promise.all([
-            api.get(endpoints.staffSummary),
-            api.get(endpoints.auditLogSummary)
-        ])
-            .then(([staffResponse, auditResponse]) => {
-                setStaffSummary(staffResponse.data.data);
-                setAuditSummary(auditResponse.data.data);
-            })
-            .catch((error) => setErrorMessage(getApiErrorMessage(error, "Unable to load governance dashboard.")))
-            .finally(() => setLoading(false));
-    }, []);
-
-    if (loading && !staffSummary && !auditSummary) {
-        return <DataPageSkeleton statCards={4} tableColumns={4} tableRows={4} detailPanels={2} />;
-    }
-
-    return (
-        <Stack spacing={3}>
-            <PageHero
-                eyebrow="System governance"
-                title="Oversee access, role ownership, and financial transparency without entering operations."
-                description="Admin stays on governance: Fund Manager access, system-wide reporting, and audit visibility."
-                tone="surface"
-                actions={
-                    <>
-                        <GradientButton component={RouterLink} to="/staff">
-                            Manage staff
-                        </GradientButton>
-                        <Button component={RouterLink} to="/audit-logs" variant="outlined">
-                            View audit logs
-                        </Button>
-                    </>
-                }
-            />
-
-            {errorMessage ? <Alert severity="warning">{errorMessage}</Alert> : null}
-            {loading ? <LinearProgress /> : null}
-
-            <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6, xl: 3 }}>
-                    <StatCard icon={BadgeRoundedIcon} label="Fund managers" value={String(staffSummary?.fund_managers ?? "—")} helper="Operational staff accounts provisioned in Fund-Me." />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6, xl: 3 }}>
-                    <StatCard icon={VerifiedUserRoundedIcon} label="Active staff" value={String(staffSummary?.active_fund_managers ?? "—")} helper="Fund managers currently allowed into the operational workspace." tone="success" />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6, xl: 3 }}>
-                    <StatCard icon={GroupRoundedIcon} label="Total members" value={String(staffSummary?.total_members ?? "—")} helper="Registered members in the contribution system." />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6, xl: 3 }}>
-                    <StatCard icon={HistoryRoundedIcon} label="Audit entries (7d)" value={String(auditSummary?.last_7_days_logs ?? "—")} helper="Recent audited system actions recorded in the last seven days." tone="warning" />
-                </Grid>
-            </Grid>
-
-            <Grid container spacing={2}>
-                <Grid size={{ xs: 12, lg: 7 }}>
-                    <MotionCard variant="outlined">
-                        <Stack spacing={1.2} sx={{ p: 2.25 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                                Governance focus
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Admin no longer runs the contribution workflow directly. Use this dashboard to keep Fund Manager access, system health, and reporting oversight explicit.
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                The operational ledger, event launch flow, and collection handling now live fully with Fund Managers.
-                            </Typography>
-                        </Stack>
-                    </MotionCard>
-                </Grid>
-                <Grid size={{ xs: 12, lg: 5 }}>
-                    <MotionCard variant="outlined" sx={{ height: "100%" }}>
-                        <Stack spacing={1.25} sx={{ p: 2.25 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                                Oversight checkpoints
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Latest audited action: {auditSummary?.latest_action || "Not recorded yet"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Latest action entity: {auditSummary?.latest_entity || "N/A"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Latest activity date: {formatDate(auditSummary?.latest_action_at || null)}
-                            </Typography>
-                            <Button component={RouterLink} to="/reports" variant="outlined">
-                                Open reports
-                            </Button>
-                        </Stack>
-                    </MotionCard>
-                </Grid>
-            </Grid>
-        </Stack>
-    );
+    return <AdminGovernanceDashboard />;
 }
 
 function FundManagerDashboardView() {

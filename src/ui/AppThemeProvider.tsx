@@ -1,4 +1,5 @@
-import { CssBaseline, GlobalStyles, ThemeProvider, alpha, createTheme } from "@mui/material";
+import { CssBaseline, GlobalStyles } from "@mui/material";
+import { ThemeProvider, alpha, createTheme } from "@mui/material/styles";
 import type { PropsWithChildren } from "react";
 
 import { brandColors, darkThemeColors } from "../theme/colors";

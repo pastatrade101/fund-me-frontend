@@ -40,13 +40,16 @@ import {
     Typography
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { brandColors } from "../../theme/colors";
 import { useUI } from "../../ui/UIProvider";
 import { useAuth } from "../../auth/AuthContext";
 import { formatRoleLabel, getPrimaryRole, type AppRole } from "../../auth/roles";
+import { api } from "../../lib/api";
+import { endpoints } from "../../lib/endpoints";
+import type { GovernanceOverallStatus } from "../../types/api";
 
 const defaultExpandedSidebarWidth = 272;
 const defaultCollapsedSidebarWidth = 88;
@@ -60,6 +63,11 @@ type NavItem = {
     label: string;
     icon: typeof DashboardRoundedIcon;
     description?: string;
+};
+
+type NavSection = {
+    label: string;
+    items: NavItem[];
 };
 
 function BrandLogo({
@@ -156,11 +164,86 @@ const navItemsByRole: Record<AppRole, NavItem[]> = {
     ]
 };
 
+const adminNavSections: NavSection[] = [
+    {
+        label: "Dashboard",
+        items: [
+            {
+                to: "/dashboard",
+                label: "Dashboard",
+                icon: DashboardRoundedIcon,
+                description: "Governance console overview."
+            }
+        ]
+    },
+    {
+        label: "Staff Management",
+        items: [
+            {
+                to: "/staff",
+                label: "Staff Accounts",
+                icon: BadgeRoundedIcon,
+                description: "Staff accounts and Fund Manager oversight."
+            }
+        ]
+    },
+    {
+        label: "Financial Oversight",
+        items: [
+            {
+                to: "/dashboard#financial-integrity",
+                label: "Contributions Summary",
+                icon: BarChartRoundedIcon,
+                description: "Collections and oversight KPIs."
+            },
+            {
+                to: "/dashboard#pending-payments",
+                label: "Payment Monitoring",
+                icon: PaymentsRoundedIcon,
+                description: "Pending, failed, and gateway risk."
+            }
+        ]
+    },
+    {
+        label: "Reports",
+        items: [
+            {
+                to: "/reports#financial-reports",
+                label: "Financial Reports",
+                icon: BarChartRoundedIcon,
+                description: "Finance and governance reporting."
+            }
+        ]
+    },
+    {
+        label: "Security",
+        items: [
+            {
+                to: "/audit-logs",
+                label: "Audit Logs",
+                icon: FactCheckRoundedIcon,
+                description: "Audit trail visibility."
+            }
+        ]
+    },
+    {
+        label: "System Settings",
+        items: [
+            {
+                to: "/settings",
+                label: "System Settings",
+                icon: SettingsRoundedIcon,
+                description: "Platform configuration."
+            }
+        ]
+    }
+];
+
 function getWorkspaceCopy(role: AppRole) {
     if (role === "admin") {
         return {
-            title: "Fund-Me Governance",
-            subtitle: "Control staff access, oversight, and system-wide reporting."
+            title: "Fund-Me Governance Console",
+            subtitle: "Monitor health, financial integrity, audit control, and staff access."
         };
     }
 
@@ -177,6 +260,10 @@ function getWorkspaceCopy(role: AppRole) {
     };
 }
 
+function formatGovernanceStatusLabel(status: GovernanceOverallStatus) {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 function getInitials(value: string) {
     return (
         value
@@ -188,8 +275,18 @@ function getInitials(value: string) {
     );
 }
 
-function isSelectedPath(pathname: string, to: string) {
-    return pathname === to || pathname.startsWith(`${to}/`) || pathname.startsWith(`${to}?`);
+function isSelectedPath(pathname: string, search: string, hash: string, to: string) {
+    const target = new URL(to, "https://fund-me.local");
+
+    if (target.hash) {
+        return pathname === target.pathname && hash === target.hash;
+    }
+
+    if (target.search) {
+        return pathname === target.pathname && search === target.search;
+    }
+
+    return pathname === target.pathname || pathname.startsWith(`${target.pathname}/`);
 }
 
 function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primaryRole: AppRole }) {
@@ -366,7 +463,7 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                     <List sx={{ display: "grid", gap: 0.2, p: 0 }}>
                         {navItems.map((item) => {
                             const Icon = item.icon;
-                            const selected = isSelectedPath(location.pathname, item.to);
+                            const selected = isSelectedPath(location.pathname, location.search, location.hash, item.to);
                             const button = (
                                 <ListItemButton
                                     key={item.to}
@@ -518,47 +615,82 @@ function SidebarContent({ collapsed, primaryRole }: { collapsed: boolean; primar
                 ) : null}
             </Stack>
 
-            <List sx={{ gap: 0.5, display: "grid" }}>
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const selected = isSelectedPath(location.pathname, item.to);
-                    const button = (
-                        <ListItemButton
-                            key={item.to}
-                            selected={selected}
-                            onClick={() => handleNavigate(item.to)}
-                            sx={{
-                                minHeight: 46,
-                                borderRadius: 1,
-                                px: collapsed ? 1.25 : 1.5,
-                                justifyContent: collapsed ? "center" : "flex-start",
-                                bgcolor: selected ? alpha(isWarmDark ? brandColors.warning : brandColors.primary[100], isWarmDark ? 0.14 : 0.9) : "transparent",
-                                color: selected ? (isWarmDark ? "#FDE68A" : brandColors.primary[900]) : "text.primary"
-                            }}
-                        >
-                            <ListItemIcon
+            {collapsed ? (
+                <List sx={{ gap: 0.5, display: "grid" }}>
+                    {adminNavSections.flatMap((section) => section.items).map((item) => {
+                        const Icon = item.icon;
+                        const selected = isSelectedPath(location.pathname, location.search, location.hash, item.to);
+                        const button = (
+                            <ListItemButton
+                                key={item.to}
+                                selected={selected}
+                                onClick={() => handleNavigate(item.to)}
                                 sx={{
-                                    color: "inherit",
-                                    minWidth: collapsed ? 0 : 38,
-                                    mr: collapsed ? 0 : 0.25,
-                                    justifyContent: "center"
+                                    minHeight: 46,
+                                    borderRadius: 1,
+                                    px: 1.25,
+                                    justifyContent: "center",
+                                    bgcolor: selected ? alpha(isWarmDark ? brandColors.warning : brandColors.primary[100], isWarmDark ? 0.14 : 0.9) : "transparent",
+                                    color: selected ? (isWarmDark ? "#FDE68A" : brandColors.primary[900]) : "text.primary"
                                 }}
                             >
-                                <Icon fontSize="small" />
-                            </ListItemIcon>
-                            {!collapsed ? <ListItemText primary={item.label} /> : null}
-                        </ListItemButton>
-                    );
+                                <ListItemIcon
+                                    sx={{
+                                        color: "inherit",
+                                        minWidth: 0,
+                                        justifyContent: "center"
+                                    }}
+                                >
+                                    <Icon fontSize="small" />
+                                </ListItemIcon>
+                            </ListItemButton>
+                        );
 
-                    return collapsed ? (
-                        <Tooltip key={item.to} title={item.label} placement="right">
-                            {button}
-                        </Tooltip>
-                    ) : (
-                        button
-                    );
-                })}
-            </List>
+                        return (
+                            <Tooltip key={item.to} title={item.label} placement="right">
+                                {button}
+                            </Tooltip>
+                        );
+                    })}
+                </List>
+            ) : (
+                <List sx={{ gap: 0.35, display: "grid", p: 0 }}>
+                    {adminNavSections.flatMap((section) => section.items).map((item) => {
+                        const Icon = item.icon;
+                        const selected = isSelectedPath(location.pathname, location.search, location.hash, item.to);
+
+                        return (
+                            <ListItemButton
+                                key={item.to}
+                                selected={selected}
+                                onClick={() => handleNavigate(item.to)}
+                                sx={{
+                                    minHeight: 46,
+                                    borderRadius: 1.25,
+                                    px: 1.5,
+                                    alignItems: "center",
+                                    bgcolor: selected ? alpha(isWarmDark ? brandColors.warning : brandColors.primary[100], isWarmDark ? 0.14 : 0.9) : "transparent",
+                                    color: selected ? (isWarmDark ? "#FDE68A" : brandColors.primary[900]) : "text.primary"
+                                }}
+                            >
+                                <ListItemIcon
+                                    sx={{
+                                        color: "inherit",
+                                        minWidth: 36,
+                                        mt: 0.15
+                                    }}
+                                >
+                                    <Icon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={item.label}
+                                    primaryTypographyProps={{ fontWeight: 500 }}
+                                />
+                            </ListItemButton>
+                        );
+                    })}
+                </List>
+            )}
 
             <Box sx={{ mt: "auto", pt: 2 }}>
                 <Divider sx={{ mb: 2 }} />
@@ -613,6 +745,7 @@ export function AppShell() {
     const navigate = useNavigate();
     const { user, signOut } = useAuth();
     const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
+    const [adminGovernanceStatus, setAdminGovernanceStatus] = useState<GovernanceOverallStatus | null>(null);
     const primaryRole = getPrimaryRole(user);
     const isPortalShell = primaryRole === "member" || primaryRole === "fund_manager";
     const isWarmDark = theme === "dark";
@@ -631,6 +764,39 @@ export function AppShell() {
         "User"
     );
     const accountMenuOpen = Boolean(accountMenuAnchor);
+
+    useEffect(() => {
+        if (primaryRole !== "admin") {
+            setAdminGovernanceStatus(null);
+            return;
+        }
+
+        let disposed = false;
+
+        const loadStatus = async () => {
+            try {
+                const response = await api.get(endpoints.adminGovernance);
+
+                if (!disposed) {
+                    setAdminGovernanceStatus(response.data.data.overall_status || null);
+                }
+            } catch {
+                if (!disposed) {
+                    setAdminGovernanceStatus(null);
+                }
+            }
+        };
+
+        void loadStatus();
+        const interval = window.setInterval(() => {
+            void loadStatus();
+        }, 60000);
+
+        return () => {
+            disposed = true;
+            window.clearInterval(interval);
+        };
+    }, [primaryRole]);
 
     const handleAccountMenuOpen = (event: MouseEvent<HTMLElement>) => {
         setAccountMenuAnchor(event.currentTarget);
@@ -800,6 +966,33 @@ export function AppShell() {
                                 {workspaceCopy.subtitle}
                             </Typography>
                         </Box>
+                        {primaryRole === "admin" ? (
+                            <Chip
+                                label={`System Status: ${
+                                    adminGovernanceStatus
+                                        ? `● ${formatGovernanceStatusLabel(adminGovernanceStatus)}`
+                                        : "● Unknown"
+                                }`}
+                                sx={{
+                                    borderRadius: 999,
+                                    fontWeight: 700,
+                                    color: adminGovernanceStatus === "critical"
+                                        ? "#DC2626"
+                                        : adminGovernanceStatus === "degraded"
+                                            ? "#D97706"
+                                            : adminGovernanceStatus === "healthy"
+                                                ? "#059669"
+                                                : "text.secondary",
+                                    bgcolor: adminGovernanceStatus === "critical"
+                                        ? alpha("#DC2626", 0.08)
+                                        : adminGovernanceStatus === "degraded"
+                                            ? alpha("#D97706", 0.08)
+                                            : adminGovernanceStatus === "healthy"
+                                                ? alpha("#059669", 0.08)
+                                                : alpha(shellAccent, 0.08)
+                                }}
+                            />
+                        ) : null}
                         <IconButton onClick={toggleTheme}>
                             {theme === "dark" ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />}
                         </IconButton>

@@ -1,4 +1,7 @@
+import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
+import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import TrendingFlatRoundedIcon from "@mui/icons-material/TrendingFlatRounded";
 import { Box, IconButton, Stack, Typography } from "@mui/material";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -13,6 +16,9 @@ export interface DashboardStatCardProps {
     helper: string;
     icon: SvgIconComponent;
     tone?: "primary" | "success" | "warning";
+    trendLabel?: string;
+    trendDirection?: "up" | "down" | "neutral";
+    trendTone?: "positive" | "negative" | "neutral";
 }
 
 export function DashboardStatCard({
@@ -20,7 +26,10 @@ export function DashboardStatCard({
     value,
     helper,
     icon: Icon,
-    tone = "primary"
+    tone = "primary",
+    trendLabel,
+    trendDirection = "neutral",
+    trendTone = "neutral"
 }: DashboardStatCardProps) {
     const theme = useTheme();
     const toneColor = tone === "success"
@@ -28,6 +37,16 @@ export function DashboardStatCard({
         : tone === "warning"
             ? theme.palette.warning.main
             : theme.palette.primary.main;
+    const TrendIcon = trendDirection === "up"
+        ? ArrowUpwardRoundedIcon
+        : trendDirection === "down"
+            ? ArrowDownwardRoundedIcon
+            : TrendingFlatRoundedIcon;
+    const trendColor = trendTone === "positive"
+        ? theme.palette.success.main
+        : trendTone === "negative"
+            ? theme.palette.error.main
+            : theme.palette.text.secondary;
 
     return (
         <motion.div
@@ -80,6 +99,15 @@ export function DashboardStatCard({
                     >
                         {value}
                     </Typography>
+
+                    {trendLabel ? (
+                        <Stack direction="row" spacing={0.7} alignItems="center">
+                            <TrendIcon sx={{ fontSize: 16, color: trendColor }} />
+                            <Typography variant="body2" sx={{ color: trendColor, fontWeight: 700 }}>
+                                {trendLabel}
+                            </Typography>
+                        </Stack>
+                    ) : null}
 
                     <Typography variant="body2" color="text.secondary">
                         {helper}

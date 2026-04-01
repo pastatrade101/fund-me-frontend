@@ -11,6 +11,7 @@ export const endpoints = {
     staffSummary: "/staff/summary",
     departments: "/departments",
     departmentStatus: (id: string) => `/departments/${id}/status`,
+    adminGovernance: "/admin/governance",
     adminPlatformFee: "/admin/platform-fee",
     members: "/members",
     member: (id: string) => `/members/${id}`,

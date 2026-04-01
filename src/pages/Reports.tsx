@@ -616,7 +616,7 @@ export function ReportsPage() {
                 </Stack>
             </Paper>
 
-            <Grid container spacing={2}>
+            <Grid container spacing={2} id="financial-reports" sx={{ scrollMarginTop: 96 }}>
                 <Grid size={{ xs: 12, md: 3 }}>
                     <StatCard icon={AssessmentRoundedIcon} label="Reported events" value={String(eventSummary.length)} helper="Events included in the current reporting dataset." />
                 </Grid>
@@ -655,7 +655,7 @@ export function ReportsPage() {
                 </Stack>
             </Paper>
 
-            <Paper sx={{ overflow: "hidden" }}>
+            <Paper id="contribution-reports" sx={{ overflow: "hidden", scrollMarginTop: 96 }}>
                 <Tabs
                     value={activeTab}
                     onChange={(_, value: ReportTab) => setActiveTab(value)}

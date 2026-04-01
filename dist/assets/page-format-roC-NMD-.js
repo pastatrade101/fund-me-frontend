@@ -1,0 +1,1 @@
+function e(t){return new Intl.NumberFormat("en-TZ",{style:"currency",currency:"TZS",maximumFractionDigits:0}).format(t||0)}function r(t){return t?new Intl.DateTimeFormat("en-TZ",{dateStyle:"medium"}).format(new Date(t)):"N/A"}function n(t){return t?new Intl.DateTimeFormat("en-TZ",{dateStyle:"medium",timeStyle:"short"}).format(new Date(t)):"N/A"}export{n as a,r as b,e as f};

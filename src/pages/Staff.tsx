@@ -106,7 +106,7 @@ export function StaffPage() {
             {errorMessage ? <Alert severity="warning">{errorMessage}</Alert> : null}
             {loading ? <LinearProgress /> : null}
 
-            <Grid container spacing={2}>
+            <Grid container spacing={2} id="fund-managers" sx={{ scrollMarginTop: 96 }}>
                 <Grid size={{ xs: 12, md: 4 }}>
                     <StatCard icon={AdminPanelSettingsRoundedIcon} label="Fund managers" value={String(summary?.fund_managers ?? "—")} helper="All Fund Manager accounts registered in Fund-Me." />
                 </Grid>

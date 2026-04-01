@@ -154,6 +154,78 @@ export interface DashboardSummary {
     total_collected: number;
     pending_contributions: number;
     participation_rate: number;
+    platform_revenue_accrued: number;
+}
+
+export type GovernanceOverallStatus = "healthy" | "degraded" | "critical";
+export type GovernanceTrendDirection = "up" | "down" | "neutral";
+export type GovernanceTrendTone = "positive" | "negative" | "neutral";
+export type GovernanceHealthStatus = "healthy" | "warning" | "critical";
+export type GovernanceAlertSeverity = "critical" | "warning" | "info";
+
+export interface GovernanceMetricTrend {
+    label: string;
+    direction: GovernanceTrendDirection;
+    tone: GovernanceTrendTone;
+}
+
+export interface GovernanceMetric {
+    value: number;
+    trend: GovernanceMetricTrend;
+}
+
+export interface GovernanceHealthItem {
+    key: string;
+    label: string;
+    value: string;
+    status: GovernanceHealthStatus;
+    detail: string;
+}
+
+export interface GovernanceAlert {
+    id: string;
+    severity: GovernanceAlertSeverity;
+    title: string;
+    detail: string;
+    timestamp: string;
+}
+
+export interface GovernanceActivityItem {
+    id: string;
+    title: string;
+    detail: string;
+    timestamp: string;
+    severity: "info" | "success" | "warning";
+}
+
+export interface GovernanceTrendPoint {
+    date: string;
+    total_contributions: number;
+    total_payments: number;
+    failed_payments: number;
+}
+
+export interface AdminGovernanceOverview {
+    generated_at: string;
+    overall_status: GovernanceOverallStatus;
+    platform_kpis: {
+        fund_managers: GovernanceMetric;
+        active_staff: GovernanceMetric;
+        total_members: GovernanceMetric;
+        audit_entries_7d: GovernanceMetric;
+        active_actors_7d: GovernanceMetric;
+    };
+    financial_integrity: {
+        total_contributions: GovernanceMetric;
+        pending_payments: GovernanceMetric;
+        failed_payments: GovernanceMetric;
+        refund_requests: GovernanceMetric;
+        platform_revenue: GovernanceMetric;
+    };
+    system_health: GovernanceHealthItem[];
+    system_alerts: GovernanceAlert[];
+    activity_feed: GovernanceActivityItem[];
+    contribution_trend: GovernanceTrendPoint[];
 }
 
 export interface StaffSummary {
